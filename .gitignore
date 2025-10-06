@@ -1,0 +1,17 @@
+#
+*.idea/
+.env
+node_modules/
+
+# all the outputs
+dist/
+build/
+out/
+
+.DS_Store
+.vscode/
+
+/client/vite.config.d.ts
+/client/vite.config.d.ts.map
+/client/vite.config.js
+/client/vite.config.js.map
