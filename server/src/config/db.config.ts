@@ -1,4 +1,4 @@
-module.exports = {
+export default {
     HOST: process.env.MYSQL_DB_HOST,
     USER: process.env.MYSQL_DB_USER,
     PASSWORD: process.env.MYSQL_DB_PASSWORD,
