@@ -1,4 +1,6 @@
 import express, {type Express } from "express";
+import { db } from "./src/data/db";
+
 
 const app: Express = express();
 const PORT = process.env.PORT || 5715;
