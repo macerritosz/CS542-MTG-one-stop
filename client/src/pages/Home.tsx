@@ -2,11 +2,25 @@ import { useState } from "react";
 import background from '../assets/home_background.jpg';
 import { buildUrl } from  'build-url-ts';
 
-
 export default function Home() {
     const [url, setUrl] = useState<string>("");
     const [locationString, setLocationString] = useState<string>("");
     
+    async function getEventData(targetUrl: string) {
+        console.log(targetUrl);
+        const res = await fetch("http://localhost:5715/scrape", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ url: targetUrl }),
+        });
+        if (!res.ok) {
+            console.error("Server returned an error:", res.statusText);
+            return;
+        }
+        const data = await res.json();
+        console.log(data.names);
+    }
+
     async function getAddressFromCoords(lat: Number, lng: number) {
         try {
             const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`);
@@ -59,6 +73,7 @@ export default function Home() {
             <p className="mt-4 text-2xl text-white">Events, Top Decks, Popular Combos, Search Bar</p>
             <button className="mt-4 px-5 py-2 text-2xl text-white rounded-full border hover:bg-gray-500 active:bg-gray-700 transform active:scale-95 transition-all duration-150 shadow-lg" onClick={handleGetLocation}>Find My Location</button>
             <p className="mt-4 text-2xl text-white">{locationString}</p>
+            <button className="mt-4 px-5 py-2 text-2xl text-white rounded-full border hover:bg-gray-500 active:bg-gray-700 transform active:scale-95 transition-all duration-150 shadow-lg" onClick={() => getEventData(url)}>Get Event Data</button>
         </div>
     );
 }

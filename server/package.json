@@ -4,12 +4,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
+    "dev": "node --loader ts-node/esm --no-warnings server.ts",
     "build": "tsc",
-    "start": "node dist/index.js",
+    "start": "node dist/server.ts",
     "lint": "eslint ."
   },
   "dependencies": {
+    "cheerio": "^1.1.2",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
     "express": "^4.21.0"
