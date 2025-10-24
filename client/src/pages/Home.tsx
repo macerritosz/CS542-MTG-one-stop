@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import background from '../assets/home_background.jpg';
 import { buildUrl } from  'build-url-ts';
 import tagIcon from '../assets/tags.svg';
@@ -23,7 +23,38 @@ export default function Home() {
     const [events, setEvents] = useState<Event[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
 
+    useEffect (() => { 
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                async (position) => {
+                    const { latitude, longitude } = position.coords;
+                    const locationString = await getAddressFromCoords(latitude, longitude);
 
+                    const urlBuilder = buildUrl('https://locator.wizards.com', {
+                        path: 'search',
+                        queryParams: {
+                            searchType: 'magic-events',
+                            query: locationString,
+                            distance: 10,
+                            page: 1,
+                            sort: 'date',
+                            sortDirection: 'Asc'
+                        },
+                    });
+
+                    setTargetUrl(urlBuilder);
+                    console.log(urlBuilder);
+                },
+                (error) => {
+                    console.error("Geolocation error:", error.message);
+                },
+                { enableHighAccuracy: true }
+            );
+        } else {
+            console.error("Geolocation didn't work");
+        }
+    }, []);
+    
     async function getAddressFromCoords(lat: Number, lng: number) {
         try {
             const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`);
@@ -36,47 +67,21 @@ export default function Home() {
         }
     }
 
-    async function getEventData() {
+    async function getEventData(targetUrl: string) {
         setLoading(true);
         try {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    async (position) => {
-                        const { latitude, longitude } = position.coords;
-                        const locationString = await getAddressFromCoords(latitude, longitude);
-    
-                        const urlBuilder = buildUrl('https://locator.wizards.com', {
-                            path: 'search',
-                            queryParams: {
-                                searchType: 'magic-events',
-                                query: locationString,
-                                distance: 10,
-                                page: 1,
-                                sort: 'date',
-                                sortDirection: 'Asc'
-                            },
-                        });
-    
-                        const res = await fetch("http://localhost:5715/api/scrapeevents", {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ url: urlBuilder }),
-                        });
-                        const data = await res.json();
-    
-                        setEvents(data.events);
-                        setLoading(false);
-                    },
-                    (error) => {
-                        console.error("Geolocation error:", error.message);
-                        setLoading(false);
-                    },
-                    { enableHighAccuracy: true }
-                );
-            } else {
-                console.error("Geolocation didn't work");
-                setLoading(false);
+            const res = await fetch("http://localhost:5715/api/scrapeevents", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ url: targetUrl }),
+            });
+            if (!res.ok) {
+                console.error("Server returned an error:", res.statusText);
+                return;
             }
+            const data = await res.json();
+            setEvents(data.events);
+            setLoading(false);
         } catch (error) {
             console.error("Error fetching events: ", error);
             setLoading(false);
@@ -88,9 +93,10 @@ export default function Home() {
             <div className="w-full h-[60vh] bg-cover bg-top flex flex-col items-center justify-center" style={{ backgroundImage: `url(${background})` }}> 
                 <h1 className="mt-30 text-9xl font-bold text-white">HOME PAGE</h1>
                 <p className="mt-4 text-2xl text-white">Events, Top Decks, Popular Combos, Search Bar</p>
-                <button className="mt-4 px-5 py-2 text-2xl text-white rounded-full border hover:bg-gray-500 active:bg-gray-700 transform active:scale-95 transition-all duration-150 shadow-lg" 
-                    onClick={() => getEventData()}
-                    disabled={loading}
+                <button className="mt-4 px-5 py-2 text-2xl text-white rounded-full border hover:bg-gray-500 active:bg-gray-700 
+                transform active:scale-95 transition-all duration-150 shadow-lg disabled:opacity-50 disabled:hover:bg-gray-700 disabled:active:scale-100 disabled:transform-none" 
+                    disabled={loading || !targetUrl}
+                    onClick={() => getEventData(targetUrl)} 
                 >
                     {loading ? "Loading..." : (events.length > 0 ? "Refresh Data" : "Get Event Data")}
                 </button>
