@@ -1,9 +1,6 @@
 import { FaSearch } from 'react-icons/fa'; 
-import { useNavigate } from "react-router-dom";
 
 export default function Navbar() {
-    const navigate = useNavigate();
-
     return (
     <nav className="w-full fixed top-0 left-0 bg-white shadow-lg">
       <div className="max-w-7xl mx-auto">
@@ -15,11 +12,11 @@ export default function Navbar() {
             <a href="/" className="text-gray-700 hover:text-blue-400 text-lg font-medium transition-colors">
               Home
             </a>
-            <a href="/cards" className="text-gray-700 hover:text-blue-400 text-lg font-medium transition-colors">
-              Cards
+            <a href="#about" className="text-gray-700 hover:text-blue-400 text-lg font-medium transition-colors">
+              About
             </a>
-            <a href="/decks" className="text-gray-700 hover:text-blue-400 text-lg font-medium transition-colors">
-              Decks
+            <a href="/search" className="text-gray-700 hover:text-blue-400 text-lg font-medium transition-colors">
+              Search
             </a>
             <a href="/wiki" className="text-gray-700 hover:text-blue-400 text-lg font-medium transition-colors">
               Wiki

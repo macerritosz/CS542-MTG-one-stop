@@ -99,8 +99,6 @@ export default function Home() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(formData),
             });
-            const data = res.json();
-
             if (res.ok) console.log("Player successfully created");
         } catch (error) {
             console.error("Something went wrong, error");
