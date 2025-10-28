@@ -1,4 +1,7 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { AuthProvider } from './contexts/AuthContext'; 
+// import ProtectedRoute from './router/ProtectedRoute';
+import PublicOnlyRoute from './router/PublicOnlyRoute';
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
 import Profile from './pages/Profile';
@@ -7,15 +10,16 @@ import Cards from './pages/Cards';
 import Decks from './pages/Decks';
 import Wiki from './pages/Wiki';
 import CreateDeck from './pages/CreateDeck';
-import Login from './pages/Login';
-import SignUp from './pages/SignUp';
+import Auth from './pages/Auth';
 
 
-export default function App() {
+function Layout() {
+    const location = useLocation();
+    const hideNavbar = ["/login", "/signup"].includes(location.pathname);
+
     return (
-        <BrowserRouter>
-            <Navbar/>
- 
+        <>
+            {!hideNavbar && <Navbar />}
             <Routes>
                 <Route path='/' element={<Home/>}/>
                 <Route path='/profile' element={<Profile/>}/>
@@ -24,10 +28,20 @@ export default function App() {
                 <Route path='/decks' element={<Decks/>}/>
                 <Route path='/wiki' element={<Wiki/>}/>
                 <Route path='/createdeck' element={<CreateDeck/>}/>
-                <Route path='/login' element={<Login/>}/>
-                <Route path='/signup' element={<SignUp/>}/>
+                <Route path='/login' element={<PublicOnlyRoute> <Auth/></PublicOnlyRoute> }/>
+                <Route path='/signup' element={<PublicOnlyRoute> <Auth/> </PublicOnlyRoute>}/>
                 
             </Routes>
-        </BrowserRouter>
+        </>
     );
 }
+
+export default function App() {
+    return (
+      <AuthProvider>
+        <BrowserRouter>
+          <Layout />
+        </BrowserRouter>
+      </AuthProvider>
+    );
+  }

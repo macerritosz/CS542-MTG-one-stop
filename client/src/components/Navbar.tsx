@@ -1,6 +1,9 @@
 import { FaSearch } from 'react-icons/fa'; 
+import { useAuth } from '../contexts/AuthContext';
 
 export default function Navbar() {
+    const { isAuthenticated, logout } = useAuth();
+
     return (
     <nav className="w-full fixed top-0 left-0 bg-white shadow-lg">
       <div className="max-w-7xl mx-auto">
@@ -25,17 +28,25 @@ export default function Navbar() {
               Profile
             </a>
           
+          
           <div className="flex items-center justify-center space-x-6">
-            <button className="px-5 py-2 border border-blue-400 text-blue-400 rounded-full hover:border-white transition-colors">
-              Login
-            </button>
-            <button 
-                className="px-6 py-2 bg-blue-400 text-white rounded-full hover:bg-blue-500 transition">
-              Sign Up
-            </button>
+            {!isAuthenticated && ( 
+              <>
+                <a href="/login" className="px-5 py-2 border border-blue-400 text-blue-400 rounded-full hover:border-white transition-colors">
+                  Login
+                </a>
+                <a href="/signup" className="px-6 py-2 bg-blue-400 text-white rounded-full hover:bg-blue-500 transition">
+                  Sign Up
+                </a>
+              </>
+            )}
+            {isAuthenticated && (
+              <button onClick={logout} className="px-5 py-2 border border-blue-400 text-blue-400 rounded-full hover:border-white transition-colors">
+                Logout
+              </button>
+            )}
             <FaSearch className={'w-5 h-5'}/>
           </div>
-
           </div>
         </div>
       </div>

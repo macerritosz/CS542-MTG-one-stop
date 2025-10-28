@@ -80,3 +80,16 @@ also going to be a advanced search overlay modal
 on deck page 
 under Search deck theses going to be All decks, then a Your Decks toggle
 */
+
+
+/*
+
+TODO- 
+authentication
+
+home page
+
+on load get event location and when user presses refresh it will get it
+
+
+*/

@@ -21,7 +21,6 @@ interface Event {
 export default function Home() {
     const [targetUrl, setTargetUrl] = useState<string>("");
     const [events, setEvents] = useState<Event[]>([]);
-    const [formData, setFormData] = useState({ display_name: '', email: '', password: '' });
     const [loading, setLoading] = useState<boolean>(false);
 
     useEffect (() => { 
@@ -82,26 +81,6 @@ export default function Home() {
         } catch (error) {
             console.error("Error fetching events: ", error);
             setLoading(false);
-        }
-    }
-
-    function handleChange(e: React.ChangeEvent<HTMLInputElement>){
-        const { name, value } = e.target;
-        setFormData(prev => ( {...prev, [name]: value }));
-    }
-
-    async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-        e.preventDefault();
-
-        try {
-            const res = await fetch("http://localhost:5715/api/player", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(formData),
-            });
-            if (res.ok) console.log("Player successfully created");
-        } catch (error) {
-            console.error("Something went wrong, error");
         }
     }
 
@@ -172,41 +151,6 @@ export default function Home() {
                     </div>
                 )}
             </div>
-
-            <form onSubmit={handleSubmit} className="flex flex-col items-center mt-8 space-y-4">
-                <input
-                    className="border border-gray-400 rounded-lg px-4 py-2 w-80 text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    type="display_name"
-                    id="display_name"
-                    name="display_name"
-                    placeholder="Display Name"
-                    value={formData.display_name}
-                    onChange={handleChange}
-                />
-                <input
-                    className="border border-gray-400 rounded-lg px-4 py-2 w-80 text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    id="email"
-                    name="email"
-                    placeholder="Email"
-                    value={formData.email}
-                    onChange={handleChange}
-                />
-                <input
-                    className="border border-gray-400 rounded-lg px-4 py-2 w-80 text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    id="password"
-                    name="password"
-                    placeholder="Password"
-                    value={formData.password}
-                    onChange={handleChange}
-                />
-                <button 
-                    type="submit" 
-                    id='new-player'
-                    className="bg-blue-400 text-white font-semibold px-6 py-2 rounded-lg hover:bg-blue-500 active:bg-blue-600 transition-all"
-                >
-                    Submit New Player
-                </button>
-            </form>
         </div>
     ); 
 }
