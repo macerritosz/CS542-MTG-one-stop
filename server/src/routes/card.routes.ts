@@ -3,17 +3,27 @@ import pool from "../data/db.ts";
 
 const router = express.Router();
 
-router.post("/card", async (req, res) => {
-    try {
-      const { display_name, email, password } = req.body;
-      const [result]: any = await pool.query(
-        "INSERT INTO Card (display_name,email, password) VALUES (?, ?, ?)",
-        [display_name, email, password]
-      );
-      res.status(201).json({ id: result.insertId, display_name, email, password });
-    } catch (error) {
-      res.status(500).json({ error: "Failed to create user" });
-    }
+router.get("/cards", async (req, res) => {
+  try {
+    const { query } = req.query;
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = 40
+    const offset = (page - 1) * limit;
+
+    const [cards]: any = await pool.query(
+      "SELECT image_uris FROM Card WHERE name LIKE ? LIMIT ? OFFSET ?",
+      [`%${query}%`, limit, offset] 
+    );
+
+    const [[{ total }]]: any = await pool.query(
+      "SELECT COUNT(*) as total FROM Card WHERE name LIKE ?",
+      [`%${query}%`]
+    );
+
+    res.status(200).json({ page, total, totalPages: Math.ceil(total / limit), cards });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to get cards" });
+  }
 });
 
 export default router;

@@ -3,17 +3,17 @@ import pool from "../data/db.ts";
 
 const router = express.Router();
 
-router.post("/deck", async (req, res) => {
-    try {
-      const { display_name, email, password } = req.body;
-      const [result]: any = await pool.query(
-        "INSERT INTO Deck (display_name,email, password) VALUES (?, ?, ?)",
-        [display_name, email, password]
-      );
-      res.status(201).json({ id: result.insertId, display_name, email, password });
-    } catch (error) {
-      res.status(500).json({ error: "Failed to create user" });
-    }
+router.get("/decks", async (req, res) => {
+  try {
+    const { query } = req.query;
+    const [decks]: any = await pool.query(
+      "SELECT * FROM Deck WHERE title LIKE ?",
+      [`%${query}%`] 
+    );
+    res.status(200).json(decks);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to get decks" });
+  }
 });
 
 export default router;

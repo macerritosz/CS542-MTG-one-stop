@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import background from '../assets/search_background2.jpg';
+import background from '../assets/search_background.jpg';
 import { useNavigate } from 'react-router-dom';
 
 type FormType = 'cards' | 'decks'
@@ -10,8 +10,8 @@ export default function Search() {
     const selected = formData.type;
 
     function handleChange(e: React.ChangeEvent<HTMLInputElement>){
-        const { name, value } = e.target;
-        setFormData(prev => ( {...prev, [name]: value }));
+        const { value } = e.target;
+        setFormData(prev => ( {...prev, ['query']: value }));
     }
 
     function handleToggle(value : FormType) {
@@ -20,16 +20,8 @@ export default function Search() {
 
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
-        
         if (!formData.query.trim()) return;
-        
-        try {
-            const res = await fetch(`http://localhost:5715/api/${formData.type}?query=${encodeURIComponent(formData.query)}`);
-            const data = await res.json();
-            navigate(`/${data.id}`)
-        } catch (error) {
-            console.error("Something went wrong, error");
-        }
+        navigate(`/${formData.type}?query=${encodeURIComponent(formData.query)}&page=1`);
     }
 
     return (
@@ -63,7 +55,7 @@ export default function Search() {
                     </div>
                     <input
                         className="border border-gray-400 rounded-lg px-4 py-2 w-140 text-black bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                        type="query"
+                        type="text"
                         id="query"
                         name="query"
                         placeholder={`Search for ${selected}`}

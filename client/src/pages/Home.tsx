@@ -107,7 +107,7 @@ export default function Home() {
 
     return (
         <div className="h-screen bg-white">
-            <div className="w-full h-[60vh] bg-cover bg-top flex flex-col items-center justify-center" style={{ backgroundImage: `url(${background})` }}> 
+            <div className="w-full h-[50vh] bg-cover bg-top flex flex-col items-center justify-center" style={{ backgroundImage: `url(${background})` }}> 
                 <h1 className="mt-30 text-9xl font-bold text-white">HOME PAGE</h1>
                 <p className="mt-4 text-2xl text-white">Events, Top Decks, Popular Combos, Search Bar</p>
                 <button className="mt-4 px-5 py-2 text-2xl text-white rounded-full border hover:bg-gray-500 active:bg-gray-700 
