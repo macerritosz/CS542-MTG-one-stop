@@ -1,9 +1,19 @@
-import { Router } from "express";
-import { createCard, getCards } from "../controller/card.controller.ts";
+import express from "express";
+import pool from "../data/db.ts";
 
-const router = Router();
+const router = express.Router();
 
-router.post("/cards", createCard);
-router.get("/cards", getCards);
+router.post("/card", async (req, res) => {
+    try {
+      const { display_name, email, password } = req.body;
+      const [result]: any = await pool.query(
+        "INSERT INTO Card (display_name,email, password) VALUES (?, ?, ?)",
+        [display_name, email, password]
+      );
+      res.status(201).json({ id: result.insertId, display_name, email, password });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to create user" });
+    }
+});
 
 export default router;
