@@ -26,7 +26,7 @@ export default function Search() {
 
     return (
         <div className="w-full h-screen bg-cover bg-top flex flex-col items-center justify-center" style={{ backgroundImage: `url(${background})` }}>
-            <div className="mt-16 w-[48rem] min-h-[35rem] flex flex-col items-center ">
+            <div className="w-[48rem] min-h-[35rem] flex flex-col items-center ">
             <h1 className="mt-30 text-7xl font-bold bg-gradient-to-r from-purple-300 via-blue-600 to-white bg-clip-text text-transparent leading-tight">
                 Gathering Magic
             </h1>
