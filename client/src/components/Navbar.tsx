@@ -3,9 +3,9 @@ import { useAuth } from '../contexts/AuthContext';
 
 export default function Navbar() {
     const { isAuthenticated, logout } = useAuth();
-
+  
     return (
-    <nav className="w-full fixed top-0 left-0 bg-white shadow-lg">
+    <nav className="w-full relative bg-white shadow-lg">
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between h-16">
           <div className="flex justify-between items-center w-full">
@@ -15,8 +15,11 @@ export default function Navbar() {
             <a href="/" className="text-gray-700 hover:text-blue-400 text-lg font-medium transition-colors">
               Home
             </a>
-            <a href="#about" className="text-gray-700 hover:text-blue-400 text-lg font-medium transition-colors">
+            <a href="/#about" className="text-gray-700 hover:text-blue-400 text-lg font-medium transition-colors">
               About
+            </a>
+            <a href="/#mission" className="text-gray-700 hover:text-blue-400 text-lg font-medium transition-colors">
+              Our Mission
             </a>
             <a href="/search" className="text-gray-700 hover:text-blue-400 text-lg font-medium transition-colors">
               Search
@@ -27,7 +30,6 @@ export default function Navbar() {
             <a href="/Profile" className="text-gray-700 hover:text-blue-400 text-lg font-medium transition-colors">
               Profile
             </a>
-          
           
           <div className="flex items-center justify-center space-x-6">
             {!isAuthenticated && ( 

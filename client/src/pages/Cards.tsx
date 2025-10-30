@@ -57,8 +57,8 @@ export default function Cards() {
     return (
         <div className="h-screen bg-gray-100/10">
             <div className="w-full h-[50vh] bg-cover bg-top flex flex-col items-center justify-center" style={{ backgroundImage: `url(${background})` }}> 
-                <h1 className="text-9xl font-bold bg-gradient-to-r from-purple-300 via-blue-600 to-white bg-clip-text text-transparent">GATHERING MAGIC</h1>
-                <p className="mt-4 text-3xl font-semibold text-white">Discover Your Next Card</p>
+                <h1 className="text-9xl font-bold bg-gradient-to-r from-purple-300 via-blue-600 to-white bg-clip-text text-transparent leading-tight">Gathering Magic</h1>
+                <p className="text-3xl font-semibold text-white">Discover Your Next Card</p>
             </div>
             <div className="mt-15 mx-35">
                 <div className="flex flex-col items-center">
@@ -66,7 +66,7 @@ export default function Cards() {
                     <form onSubmit={handleSubmit} className="mt-14 flex flex-col relative w-max">
                         <div className="relative">
                             <input
-                                className="relative z-20 border border-gray-400 rounded-lg px-4 py-2 w-140 text-black bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                className="relative z-20 border border-gray-400 rounded-lg px-4 py-2 w-140 text-black bg-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
                                 type="text"
                                 id="query"
                                 name="query"

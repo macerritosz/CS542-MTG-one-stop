@@ -27,10 +27,10 @@ export default function Search() {
     return (
         <div className="w-full h-screen bg-cover bg-top flex flex-col items-center justify-center" style={{ backgroundImage: `url(${background})` }}>
             <div className="mt-16 w-[48rem] min-h-[35rem] flex flex-col items-center ">
-            <h1 className="mt-30 text-7xl font-bold bg-gradient-to-r from-purple-300 via-blue-600 to-white bg-clip-text text-transparent">
+            <h1 className="mt-30 text-7xl font-bold bg-gradient-to-r from-purple-300 via-blue-600 to-white bg-clip-text text-transparent leading-tight">
                 Gathering Magic
             </h1>
-            <p className="text-2xl text-gray-300 drop-shadow-lg font-medium">Search for Cards and player created Decks</p>
+            <p className="-mt-1 text-2xl text-gray-300 drop-shadow-lg font-medium">Search for Cards and player created Decks</p>
                 <form onSubmit={handleSubmit} className="flex flex-col items-center mt-8">
                     <div className="relative flex bg-white/20 backdrop-blur-md border border-white/30 text-white rounded-full p-1 w-[200px] mb-2 shadow-lg">
                         <div className={`absolute top-1 left-1 w-1/2 h-[calc(100%-0.5rem)] rounded-full bg-gray-900 transition-transform duration-300 ease-in-out ${
@@ -54,7 +54,7 @@ export default function Search() {
                         </button>
                     </div>
                     <input
-                        className="border border-gray-400 rounded-lg px-4 py-2 w-140 text-black bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        className="border border-gray-400 rounded-lg px-4 py-2 w-140 text-black bg-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
                         type="text"
                         id="query"
                         name="query"
