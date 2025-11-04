@@ -18,7 +18,6 @@ interface Event {
     dayOfMonth: string;
 }
 
-
 export default function Profile() {
     const [targetUrl, setTargetUrl] = useState<string>("");
     const [events, setEvents] = useState<Event[]>([]);

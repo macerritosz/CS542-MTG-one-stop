@@ -11,7 +11,7 @@ import Decks from './pages/Decks';
 import Wiki from './pages/Wiki';
 import CreateDeck from './pages/CreateDeck';
 import Auth from './pages/Auth';
-
+import DeckDetail from './pages/DeckDetail';
 
 function Layout() {
     const location = useLocation();
@@ -26,6 +26,7 @@ function Layout() {
                 <Route path='/search' element={<Search/>}/>
                 <Route path='/cards' element={<Cards/>}/>
                 <Route path='/decks' element={<Decks/>}/>
+                <Route path='/decks/:deckID' element={<DeckDetail/>}/>
                 <Route path='/wiki' element={<Wiki/>}/>
                 <Route path='/createdeck' element={<CreateDeck/>}/>
                 <Route path='/login' element={<PublicOnlyRoute> <Auth/></PublicOnlyRoute> }/>

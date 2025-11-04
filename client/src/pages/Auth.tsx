@@ -51,7 +51,8 @@ export default function Auth(){
                 });
                 return;
             }
-            login(data.token)
+            console.log(data.player.display_name)
+            login(data.token, data.player.display_name)
         } catch (error) {
             console.error("Something went wrong, error");
         }
@@ -92,9 +93,10 @@ export default function Auth(){
                 body: JSON.stringify(formData),
             });
             data = await res.json();
-            login(data.token)
+            
+            login(data.token, data.player.display_name)
         } catch (error) {
-            console.error("Something went wrong, error");
+            console.error("Something went wrong", error);
         }
     }
 

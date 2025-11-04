@@ -2,18 +2,15 @@ import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom';
 import background from '../assets/search_background.jpg'
 import { Plus } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 interface Card {
+    cardID: string;
     image_uris: string;
 }
 
-interface SelectedCard {
-    card: Card;
-    idx: number;
-}
-
 interface Deck {
-    id: number,
+    deckID: number,
     title: string
 }
 
@@ -26,20 +23,12 @@ export default function Cards() {
     const [totalPages, setTotalPages] = useState(1);
     const [decks, setDecks] = useState<Deck[]>([]);
     const params = new URLSearchParams(location.search);
-    
-    const [tempDecks] = useState<Deck[]>([ // delete once we have sample decks
-        { id: 1, title: "Main Deck" },
-        { id: 2, title: "Sideboard" },
-        { id: 3, title: "Commander Deck" },
-        { id: 4, title: "Amazing Deck"},
-        { id: 5, title: "Dis Deck Wil Win"}
-    ]);
-
-    const [draggedCard, setDraggedCard] = useState<SelectedCard | null>(null);
+    const { display_name } = useAuth();
+    const [draggedCard, setDraggedCard] = useState<Card | null>(null);
     const [isDragging, setIsDragging] = useState<boolean>(false);
     const [mousePosition, setMousePosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
     const [plusButtonPosition, setPlusButtonPosition] = useState<{ x: number; y: number } | null>(null);
-    const [hoveredCardIdx, setHoveredCardIdx] = useState<number | null>(null);
+    const [hoveredCardID, setHoveredCardID] = useState<string | null>(null);
 
     useEffect(() => {
         const url_query = params.get("query")
@@ -57,13 +46,26 @@ export default function Cards() {
             setCards(data.cards);
             setTotalPages(data.totalPages);
 
-            setDecks(tempDecks) // temporary decks
           } catch (err) {
             console.error("Failed to fetch cards:", err);
           }
         };
         fetchCards();
     }, [location.search]);
+
+    useEffect(() => {
+        async function fetchDecks() {
+            try {
+                const res = await fetch(`http://localhost:5715/api/decks/me?name=${encodeURIComponent(display_name!)}`);
+                const data = await res.json();
+                setDecks(data.decks);
+                console.log(data.decks)
+            } catch (err) {
+                console.error("Failed to fetch decks:", err);
+            }
+        };
+        fetchDecks();
+    }, []);
 
     useEffect(() => {
         const handleMouseMove = (e: MouseEvent) => {
@@ -73,7 +75,7 @@ export default function Cards() {
             setDraggedCard(null);
             setIsDragging(false);
             setPlusButtonPosition(null);
-            setHoveredCardIdx(null);
+            setHoveredCardID(null);
         };
         if (isDragging) {
             document.addEventListener('mousemove', handleMouseMove);
@@ -85,24 +87,36 @@ export default function Cards() {
         };
     }, [isDragging, draggedCard]);
 
-    function handlePlusMouseDown(card: Card, idx: number, e: React.MouseEvent<HTMLButtonElement>) {
+    function handlePlusMouseDown(card: Card, e: React.MouseEvent<HTMLButtonElement>) {
         e.preventDefault();
         const rect = e.currentTarget.getBoundingClientRect();
         setPlusButtonPosition({ x: rect.right, y: rect.top });
-        setDraggedCard({ card, idx });
+        setDraggedCard(card);
         setIsDragging(true);
         setMousePosition({ x: e.clientX, y: e.clientY });
     };
 
+    async function addCardToDeck(cardID: string, deckID: number){
+        try {
+            const quantity = 1;
+            const res = await fetch('http://localhost:5715/api/decks/card', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({cardID, deckID, quantity}),
+            });
+            const data = await res.json();
+            console.log(data.message)
+        } catch (err) {
+            console.error("Failed to fetch decks:", err);
+        }
+    }
+
     function handleDeckMouseUp(deckId: number, e: React.MouseEvent<HTMLDivElement>) {
         e.stopPropagation();
         if (draggedCard && isDragging) {
-            console.log(`Added card ${draggedCard.idx} to deck ${deckId}`);
-            /* TODO
-
-            Add logic here to add the card to deck
+            console.log(`Added card ${draggedCard.cardID} to deck ${deckId}`);
             
-            */
+            addCardToDeck(draggedCard.cardID, deckId)
             setDraggedCard(null);
             setIsDragging(false);
         }
@@ -151,23 +165,23 @@ export default function Cards() {
                     className="mt-20 px-10 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 justify--items-center gap-6 "
                 >
                     {cards.length > 0 ? (
-                        cards.map((card, idx) => (
-                            <div key={idx} 
+                        cards.map((card) => (
+                            <div key={card.cardID} 
                                 className={`relative group w-full transition-transform duration-200 ${
-                                    draggedCard?.idx === idx || hoveredCardIdx === idx ? 'scale-105' : ''
+                                    draggedCard?.cardID === card.cardID || hoveredCardID === card.cardID ? 'scale-105' : ''
                                 }`}
-                                onMouseEnter={() => !draggedCard && setHoveredCardIdx(idx)}
-                                onMouseLeave={() => setHoveredCardIdx(null)}
+                                onMouseEnter={() => !draggedCard && setHoveredCardID(card.cardID)}
+                                onMouseLeave={() => setHoveredCardID(null)}
                             >
                                 <img
                                     src={card.image_uris}
-                                    alt={`Card ${idx}`}
+                                    alt={`Card ${card.cardID}`}
                                     className="w-full h-auto object-cover rounded-lg shadow-md"
                                 />
                                 <button
-                                    onMouseDown={(e) => handlePlusMouseDown(card, idx, e)}
+                                    onMouseDown={(e) => handlePlusMouseDown(card, e)}
                                     className={`absolute top-6 right-6 bg-purple-500 text-white rounded-xl p-1 transition-opacity duration-200 shadow-lg 
-                                    ${draggedCard?.idx === idx || hoveredCardIdx === idx ? 'opacity-90 cursor-grab active:cursor-grabbing' : 'opacity-0'} `}
+                                    ${draggedCard?.cardID === card.cardID || hoveredCardID === card.cardID ? 'opacity-90 cursor-grab active:cursor-grabbing' : 'opacity-0'} `}
                                 >
                                     <Plus size={25} />
                                 </button>
@@ -187,7 +201,7 @@ export default function Cards() {
                         }}
                     >
                         <img
-                            src={draggedCard.card.image_uris}
+                            src={draggedCard.image_uris}
                             alt="Dragged card"
                             className="w-full h-auto rounded-lg shadow-2xl opacity-80"
                         />
@@ -205,8 +219,8 @@ export default function Cards() {
                         {decks.length > 0 ? (
                             decks.map((deck, index) => (
                                 <div
-                                    key={deck.id}
-                                    onMouseUp={(e) => handleDeckMouseUp(deck.id, e)}
+                                    key={deck.deckID}
+                                    onMouseUp={(e) => handleDeckMouseUp(deck.deckID, e)}
                                     className="bg-white/95 backdrop-blur-sm hover:bg-purple-500 text-gray-800 hover:text-white px-5 py-2.5 rounded-md shadow-md border border-gray-200 hover:border-purple-500 cursor-pointer transition-all duration-150 hover:translate-x-1 pointer-events-auto whitespace-nowrap text-sm font-medium"
                                     style={{
                                         animationDelay: `${index * 50}ms`,

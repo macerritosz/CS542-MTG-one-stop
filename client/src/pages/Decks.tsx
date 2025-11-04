@@ -3,7 +3,8 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import background from '../assets/search_background.jpg'
 
 interface Deck {
-    title: string
+    title: string;
+    deckID: number;
 }
 
 export default function Decks() {
@@ -29,7 +30,7 @@ export default function Decks() {
           try {
             const res = await fetch(`http://localhost:5715/api/decks?query=${encodeURIComponent(url_query!)}&page=${url_page}`);
             const data = await res.json();
-            setDecks(data);
+            setDecks(data.decks);
             setTotalPages(data.totalPages || 1);
           } catch (err) {
             console.error("Failed to fetch decks:", err);
@@ -79,13 +80,16 @@ export default function Decks() {
                 </div>
                 <div className="mt-20 px-10 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 justify--items-center gap-6 ">
                     {decks.length > 0 ? (
-                        decks.map((deck, idx) => (
+                        decks.map((deck) => (
+                            /*
                             <img
                                 key={idx}
                                 src={deck.title}
                                 alt={`Deck ${idx}`}
                                 className="w-full h-auto object-cover rounded-lg shadow-md hover:scale-105 transition-transform duration-200"
                             />
+                            */
+                           <a href={`/decks/${deck.deckID}`}> {deck.title}</a>
                         ))
                     ) : (
                         <p className="text-gray-600 mt-10 col-span-full text-center">No decks found.</p>

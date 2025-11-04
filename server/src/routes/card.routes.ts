@@ -11,7 +11,7 @@ router.get("/cards", async (req, res) => {
     const offset = (page - 1) * limit;
 
     const [cards]: any = await pool.query(
-      "SELECT image_uris FROM Card WHERE name LIKE ? LIMIT ? OFFSET ?",
+      "SELECT image_uris, cardID FROM Card WHERE name LIKE ? LIMIT ? OFFSET ?",
       [`%${query}%`, limit, offset] 
     );
 
