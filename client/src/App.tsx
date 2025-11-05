@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext'; 
-// import ProtectedRoute from './router/ProtectedRoute';
+import ProtectedRoute from './router/ProtectedRoute';
 import PublicOnlyRoute from './router/PublicOnlyRoute';
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
@@ -11,7 +11,7 @@ import Decks from './pages/Decks';
 import Wiki from './pages/Wiki';
 import CreateDeck from './pages/CreateDeck';
 import Auth from './pages/Auth';
-import DeckDetail from './pages/DeckDetail';
+import DeckDetail from './components/DeckDetail';
 
 function Layout() {
     const location = useLocation();
@@ -28,10 +28,9 @@ function Layout() {
                 <Route path='/decks' element={<Decks/>}/>
                 <Route path='/decks/:deckID' element={<DeckDetail/>}/>
                 <Route path='/wiki' element={<Wiki/>}/>
-                <Route path='/createdeck' element={<CreateDeck/>}/>
+                <Route path='/createdeck' element={<ProtectedRoute><CreateDeck/></ProtectedRoute>}/>
                 <Route path='/login' element={<PublicOnlyRoute> <Auth/></PublicOnlyRoute> }/>
                 <Route path='/signup' element={<PublicOnlyRoute> <Auth/> </PublicOnlyRoute>}/>
-                
             </Routes>
         </>
     );

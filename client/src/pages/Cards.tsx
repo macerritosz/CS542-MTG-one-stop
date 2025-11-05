@@ -23,7 +23,7 @@ export default function Cards() {
     const [totalPages, setTotalPages] = useState(1);
     const [decks, setDecks] = useState<Deck[]>([]);
     const params = new URLSearchParams(location.search);
-    const { display_name } = useAuth();
+    const { display_name, isAuthenticated } = useAuth();
     const [draggedCard, setDraggedCard] = useState<Card | null>(null);
     const [isDragging, setIsDragging] = useState<boolean>(false);
     const [mousePosition, setMousePosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -178,13 +178,15 @@ export default function Cards() {
                                     alt={`Card ${card.cardID}`}
                                     className="w-full h-auto object-cover rounded-lg shadow-md"
                                 />
-                                <button
-                                    onMouseDown={(e) => handlePlusMouseDown(card, e)}
-                                    className={`absolute top-6 right-6 bg-purple-500 text-white rounded-xl p-1 transition-opacity duration-200 shadow-lg 
-                                    ${draggedCard?.cardID === card.cardID || hoveredCardID === card.cardID ? 'opacity-90 cursor-grab active:cursor-grabbing' : 'opacity-0'} `}
-                                >
-                                    <Plus size={20} />
-                                </button>
+                                {isAuthenticated && (
+                                    <button
+                                        onMouseDown={(e) => handlePlusMouseDown(card, e)}
+                                        className={`absolute top-6 right-6 bg-purple-500 text-white rounded-xl p-1 transition-opacity duration-200 shadow-lg 
+                                        ${draggedCard?.cardID === card.cardID || hoveredCardID === card.cardID ? 'opacity-90 cursor-grab active:cursor-grabbing' : 'opacity-0'} `}
+                                    >
+                                        <Plus size={20} />
+                                    </button>
+                                )}
                             </div>
                         ))
                     ) : (
