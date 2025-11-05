@@ -157,12 +157,12 @@ export default function Cards() {
                                 value={query}
                                 onChange={handleChange}
                             />
-                            <a href="/" className="absolute left-1/2 -translate-x-1/2 -bottom-[1.5rem] bg-gray-100 text-gray-800 text-sm px-3 py-0.5 rounded-b-lg border-x border-b border-gray-400 hover:underline">Advanced Search </a>
+                            <a href="/" className="absolute left-1/2 -translate-x-1/2 -bottom-[1.5rem] bg-white text-purple-500 text-sm px-3 py-0.5 rounded-b-lg border-x border-b border-purple-500 hover:underline">Advanced Search </a>
                         </div>
                     </form>
                 </div>
                 <div 
-                    className="mt-20 px-10 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 justify--items-center gap-6 "
+                    className="mt-20 px-[12%] grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 justify--items-center gap-6 "
                 >
                     {cards.length > 0 ? (
                         cards.map((card) => (
@@ -183,7 +183,7 @@ export default function Cards() {
                                     className={`absolute top-6 right-6 bg-purple-500 text-white rounded-xl p-1 transition-opacity duration-200 shadow-lg 
                                     ${draggedCard?.cardID === card.cardID || hoveredCardID === card.cardID ? 'opacity-90 cursor-grab active:cursor-grabbing' : 'opacity-0'} `}
                                 >
-                                    <Plus size={25} />
+                                    <Plus size={20} />
                                 </button>
                             </div>
                         ))
