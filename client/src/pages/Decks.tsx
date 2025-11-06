@@ -194,6 +194,8 @@ export default function Decks() {
 /*
 IDEAS:
 advanced search overlay modal
+
+trigger idea- amount of decks this card is in - derived value for card 
 */
 
 
@@ -203,4 +205,13 @@ TODO-
 on load get event location and when user presses refresh it will get it
 
 deck needs a certain amount of cards to publish
+
+
+what need for each card:
+produced mana- 
+difference between color identity and colors to card??
+
+i dont think we need colors to card
+
+
 */

@@ -173,11 +173,13 @@ export default function Cards() {
                                 onMouseEnter={() => !draggedCard && setHoveredCardID(card.cardID)}
                                 onMouseLeave={() => setHoveredCardID(null)}
                             >
-                                <img
-                                    src={card.image_uris}
-                                    alt={`Card ${card.cardID}`}
-                                    className="w-full h-auto object-cover rounded-lg shadow-md"
-                                />
+                                <a href={`/cards/${card.cardID}`}>
+                                    <img
+                                        src={card.image_uris}
+                                        alt={`Card ${card.cardID}`}
+                                        className="w-full h-auto object-cover rounded-lg shadow-md"
+                                    />
+                                </a>
                                 {isAuthenticated && (
                                     <button
                                         onMouseDown={(e) => handlePlusMouseDown(card, e)}

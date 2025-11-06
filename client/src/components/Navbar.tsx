@@ -47,7 +47,9 @@ export default function Navbar() {
                 Logout
               </button>
             )}
-            <FaSearch className={'w-5 h-5'}/>
+            <a href='/search'>
+              <FaSearch className={'w-5 h-5'}/>
+            </a>
           </div>
           </div>
         </div>
