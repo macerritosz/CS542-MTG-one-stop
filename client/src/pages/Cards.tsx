@@ -3,7 +3,6 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import background from '../assets/search_background.jpg'
 import { Plus } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import AdvancedSearchModal from '../components/AdvancedSearchModal';
 
 interface Card {
     cardID: string;
@@ -13,20 +12,6 @@ interface Card {
 interface Deck {
     deckID: number,
     title: string
-}
-
-interface AdvancedFilters {
-  rarity: string[];
-  colors: string[];
-  colorIdentity: string[];
-  manaValueMin: string;
-  manaValueMax: string;
-  format: string;
-  priceMin: string;
-  priceMax: string;
-  set: string;
-  sortBy: string;
-  sortOrder: 'asc' | 'desc';
 }
 
 export default function Cards() {
@@ -44,63 +29,19 @@ export default function Cards() {
     const [mousePosition, setMousePosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
     const [plusButtonPosition, setPlusButtonPosition] = useState<{ x: number; y: number } | null>(null);
     const [hoveredCardID, setHoveredCardID] = useState<string | null>(null);
-    const [isAdvancedSearchOpen, setIsAdvancedSearchOpen] = useState(false);
-    const [advancedFilters, setAdvancedFilters] = useState<AdvancedFilters>({
-        rarity: [],
-        colors: [],
-        colorIdentity: [],
-        manaValueMin: '',
-        manaValueMax: '',
-        format: '',
-        priceMin: '',
-        priceMax: '',
-        set: '',
-        sortBy: 'name',
-        sortOrder: 'asc',
-    });
 
     useEffect(() => {
-        const url_query = params.get("query") || '';
+        const url_query = params.get("query")
         const url_page = parseInt(params.get("page") || "1", 10);
-        
-        // Parse advanced filters from URL
-        // URLSearchParams.getAll() handles multiple params with same name (e.g., colors=U&colors=B)
-        const filters: AdvancedFilters = {
-            rarity: params.getAll("rarity").filter(Boolean),
-            colors: params.getAll("colors").filter(Boolean),
-            colorIdentity: params.getAll("colorIdentity").filter(Boolean),
-            manaValueMin: params.get("manaValueMin") || '',
-            manaValueMax: params.get("manaValueMax") || '',
-            format: params.get("format") || '',
-            priceMin: params.get("priceMin") || '',
-            priceMax: params.get("priceMax") || '',
-            set: params.get("set") || '',
-            sortBy: params.get("sortBy") || 'name',
-            sortOrder: (params.get("sortOrder") as 'asc' | 'desc') || 'asc',
-        };
+
+        if (!url_query) return;
         
         setQuery(url_query);
         setPage(url_page);
-        setAdvancedFilters(filters);
 
         async function fetchCards() {
           try {
-            const searchParams = new URLSearchParams();
-            if (url_query) searchParams.append('query', url_query);
-            if (filters.rarity.length > 0) filters.rarity.forEach(r => searchParams.append('rarity', r));
-            if (filters.colors.length > 0) filters.colors.forEach(c => searchParams.append('colors', c));
-            if (filters.colorIdentity.length > 0) filters.colorIdentity.forEach(c => searchParams.append('colorIdentity', c));
-            if (filters.manaValueMin) searchParams.append('manaValueMin', filters.manaValueMin);
-            if (filters.manaValueMax) searchParams.append('manaValueMax', filters.manaValueMax);
-            if (filters.format) searchParams.append('format', filters.format);
-            if (filters.priceMin) searchParams.append('priceMin', filters.priceMin);
-            if (filters.priceMax) searchParams.append('priceMax', filters.priceMax);
-            if (filters.set) searchParams.append('set', filters.set);
-            searchParams.append('sortBy', filters.sortBy);
-            searchParams.append('sortOrder', filters.sortOrder);
-            searchParams.append('page', url_page.toString());
-
-            const res = await fetch(`http://localhost:5715/api/cards?${searchParams.toString()}`);
+            const res = await fetch(`http://localhost:5715/api/cards?query=${encodeURIComponent(url_query!)}&page=${url_page}`);
             const data = await res.json();
             setCards(data.cards);
             setTotalPages(data.totalPages);
@@ -109,21 +50,7 @@ export default function Cards() {
             console.error("Failed to fetch cards:", err);
           }
         };
-        
-        // Fetch cards if there's a query OR if there are any active filters
-        const hasActiveFilters = filters.rarity.length > 0 || 
-                                 filters.colors.length > 0 || 
-                                 filters.colorIdentity.length > 0 ||
-                                 filters.manaValueMin !== '' ||
-                                 filters.manaValueMax !== '' ||
-                                 filters.format !== '' ||
-                                 filters.priceMin !== '' ||
-                                 filters.priceMax !== '' ||
-                                 filters.set !== '';
-        
-        if (url_query || hasActiveFilters) {
-            fetchCards();
-        }
+        fetchCards();
     }, [location.search]);
 
     useEffect(() => {
@@ -195,26 +122,8 @@ export default function Cards() {
         }
     };
 
-    function buildSearchURL(filters: AdvancedFilters, searchQuery: string, pageNum: number = 1) {
-        const params = new URLSearchParams();
-        if (searchQuery) params.append('query', searchQuery);
-        if (filters.rarity.length > 0) filters.rarity.forEach(r => params.append('rarity', r));
-        if (filters.colors.length > 0) filters.colors.forEach(c => params.append('colors', c));
-        if (filters.colorIdentity.length > 0) filters.colorIdentity.forEach(c => params.append('colorIdentity', c));
-        if (filters.manaValueMin) params.append('manaValueMin', filters.manaValueMin);
-        if (filters.manaValueMax) params.append('manaValueMax', filters.manaValueMax);
-        if (filters.format) params.append('format', filters.format);
-        if (filters.priceMin) params.append('priceMin', filters.priceMin);
-        if (filters.priceMax) params.append('priceMax', filters.priceMax);
-        if (filters.set) params.append('set', filters.set);
-        params.append('sortBy', filters.sortBy);
-        params.append('sortOrder', filters.sortOrder);
-        params.append('page', pageNum.toString());
-        return `/cards?${params.toString()}`;
-    }
-
     function changePage(newPage: number) {
-        navigate(buildSearchURL(advancedFilters, query, newPage));
+        navigate(`/cards?query=${encodeURIComponent(query)}&page=${newPage}`);
     }
 
     function handleChange(e: React.ChangeEvent<HTMLInputElement>){
@@ -224,12 +133,8 @@ export default function Cards() {
 
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
-        navigate(buildSearchURL(advancedFilters, query, 1));
-    }
-
-    function handleAdvancedFiltersApply(filters: AdvancedFilters) {
-        setAdvancedFilters(filters);
-        navigate(buildSearchURL(filters, query, 1));
+        if (!query.trim()) return;
+        navigate(`/cards?query=${encodeURIComponent(query)}&page=1`);
     }
     
     return (
@@ -252,13 +157,7 @@ export default function Cards() {
                                 value={query}
                                 onChange={handleChange}
                             />
-                            <button 
-                                type="button"
-                                onClick={() => setIsAdvancedSearchOpen(true)}
-                                className="absolute left-1/2 -translate-x-1/2 -bottom-[1.5rem] bg-white text-purple-500 text-sm px-3 py-0.5 rounded-b-lg border-x border-b border-purple-500 hover:underline cursor-pointer"
-                            >
-                                Advanced Search
-                            </button>
+                            <a href="/" className="absolute left-1/2 -translate-x-1/2 -bottom-[1.5rem] bg-white text-purple-500 text-sm px-3 py-0.5 rounded-b-lg border-x border-b border-purple-500 hover:underline">Advanced Search </a>
                         </div>
                     </form>
                 </div>
@@ -377,12 +276,6 @@ export default function Cards() {
                     </div>
                 )}
             </div>
-            <AdvancedSearchModal
-                isOpen={isAdvancedSearchOpen}
-                onClose={() => setIsAdvancedSearchOpen(false)}
-                onApply={handleAdvancedFiltersApply}
-                currentFilters={advancedFilters}
-            />
         </div>
     );
 }

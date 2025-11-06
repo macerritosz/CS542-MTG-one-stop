@@ -140,7 +140,6 @@ export default function Auth(){
                     
                     <input
                         className="text-xl -mt-1.5 bg-gray-300 opacity-70 rounded-sm px-[4%] py-[2.5%] w-[55%] shadow-md text-black placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                        type="password"
                         id="password"
                         name="password"
                         placeholder="Password"
