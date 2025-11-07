@@ -4,6 +4,7 @@ import tagIcon from '../assets/tags.svg';
 import clockIcon from '../assets/clock.svg';
 import shopIcon from '../assets/shop.svg';
 import calendarIcon from '../assets/calendar.svg';
+import { useAuth } from '../contexts/AuthContext';
 
 
 interface Event {
@@ -22,7 +23,25 @@ export default function Profile() {
     const [targetUrl, setTargetUrl] = useState<string>("");
     const [events, setEvents] = useState<Event[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
+    const { display_name } = useAuth();
 
+    useEffect(() => {
+        if (!display_name) return;
+      
+        async function fetchEvents() {
+          try {
+            const res = await fetch(`http://localhost:5715/api/events?player_name=${encodeURIComponent(display_name!)}`);
+            const data = await res.json();
+            setEvents(data.events);
+          } catch (err) {
+            console.error("Failed to fetch events:", err);
+          }
+        }
+      
+        fetchEvents();
+      }, [display_name]);
+
+    
     useEffect (() => { 
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
@@ -55,29 +74,38 @@ export default function Profile() {
         }
     }, []);
     
-    async function getAddressFromCoords(lat: Number, lng: number) {
+    async function getAddressFromCoords(lat: number, lng: number): Promise<string | null> {
         try {
-            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`);
+            const res = await fetch("http://localhost:5715/api/reverse-geocode", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ lat, lng }),
+            });
+            
             const data = await res.json();
             const { city, town, village, state, country } = data.address;
             const finalCity = city || town || village || "";
             return `${finalCity}, ${state}, ${country}`;
         } catch (error) {
             console.error("Error fetching address", error);
+            return null;
         }
     }
 
     async function getEventData(targetUrl: string) {
         setLoading(true);
         try {
-            const res = await fetch("http://localhost:5715/api/scrapeevents", {
+            let res = await fetch("http://localhost:5715/api/scrapeevents", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ url: targetUrl }),
+                body: JSON.stringify({ url: targetUrl, player_name: display_name }),
             });
+            setLoading(false);
+            
+            res = await fetch(`http://localhost:5715/api/events?player_name=${encodeURIComponent(display_name!)}`);
             const data = await res.json();
             setEvents(data.events);
-            setLoading(false);
+
         } catch (error) {
             console.error("Error fetching events: ", error);
             setLoading(false);
@@ -87,7 +115,7 @@ export default function Profile() {
     return (
         <>
             <div className="flex flex-col items-center justify-center h-[50vh] bg-blue-300"> 
-                <h1 className="text-9xl font-bold text-white">PROFILE PAGE</h1>
+                <h1 className="text-9xl font-bold text-white">Welcome Back, {display_name}</h1>
                 <p className="mt-4 text-2xl text-white">Decks Created, Saved Decks, Information</p>
                 <button className="mt-4 px-5 py-2 text-2xl text-white rounded-full border hover:bg-gray-500 active:bg-gray-700 
                 transform active:scale-95 transition-all duration-150 shadow-lg disabled:opacity-50 disabled:hover:bg-gray-700 disabled:active:scale-100 disabled:transform-none" 

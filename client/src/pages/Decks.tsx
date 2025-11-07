@@ -190,28 +190,21 @@ export default function Decks() {
     );
 }
 
-
-/*
-IDEAS:
-advanced search overlay modal
-
-trigger idea- amount of decks this card is in - derived value for card 
-*/
-
-
 /*
 
 TODO- 
-on load get event location and when user presses refresh it will get it
+- deck needs a certain amount of cards to publish
+- advanced search overlay modal
 
-deck needs a certain amount of cards to publish
+- i dont think we need colors to card
+- trigger idea- amount of decks this card is in - derived value for card 
+- trigger idea- delete quantity- when player inserts card thats already in deck it just increments quanitty by one
 
-
-what need for each card:
-produced mana- 
-difference between color identity and colors to card??
-
-i dont think we need colors to card
-
+- decks the cards are in on bottom of page, show popular ones
+- add card to deck functionality on card detail page
+- card combos implemented
+- combs cards are in
+- when hover over card pans out to left or right some info about the card
+- when hover over deck pans out to left or right a list of first 30 cards or so, name
 
 */
