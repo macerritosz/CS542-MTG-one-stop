@@ -23,7 +23,7 @@ function Layout() {
             {!hideNavbar && <Navbar />}
             <Routes>
                 <Route path='/' element={<Home/>}/>
-                <Route path='/profile' element={<Profile/>}/>
+                <Route path='/profile' element={<ProtectedRoute><Profile/></ProtectedRoute>}/>
                 <Route path='/search' element={<Search/>}/>
                 <Route path='/cards' element={<Cards/>}/>
                 <Route path='/cards/:cardID' element={<CardDetail/>}/>

@@ -1,10 +1,45 @@
 import express from "express";
+import pool from "../data/db.ts";
 import puppeteer from "puppeteer";
 
 const router = express.Router();
 
+router.get("/events", async (req, res) => {
+    try {
+        const { player_name } = req.query;
+        console.log(player_name)
+        const [ events ]: any = await pool.query(
+            "SELECT * FROM Events WHERE player_name = ?",
+            [player_name]
+        );
+        res.status(200).json({ events });
+    } catch (error) {
+        res.status(500).json({ error: "Failed to get events" });
+    }
+});
+
+router.post("/reverse-geocode", async (req, res) => {
+    const { lat, lng } = req.body;
+    try {
+        const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`,
+            {
+                headers: {
+                    'User-Agent': 'MagicEventFinder/1.0'
+                }
+            }
+        );
+        const data = await response.json();
+        res.json(data);
+    } catch (error) {
+        console.error("Reverse geocode error:", error);
+        res.status(500).json({ error: "Failed to reverse geocode" });
+    }
+});
+
 router.post("/scrapeevents", async (req, res) => {
     const url = req.body.url as string;
+    const player_name = req.body.player_name as string;
     try {
         const browser = await puppeteer.launch();
         const page = await browser.newPage();
@@ -51,6 +86,41 @@ router.post("/scrapeevents", async (req, res) => {
         });
 
         await browser.close();
+        
+        const connection = await pool.getConnection();
+        try {
+            await connection.beginTransaction();
+            
+            await connection.query("DELETE FROM Events WHERE player_name = ?", [player_name]);
+
+            for (const e of events) {
+                await connection.query(
+                    `INSERT INTO Events 
+                        (player_name, eventName, orgName, eventDistance, eventDate, eventTime, eventTags, dayOfWeek, month, dayOfMonth)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                    [
+                        player_name,
+                        e.eventName,
+                        e.orgName,
+                        e.eventDistance,
+                        e.eventDate,
+                        e.eventTime,
+                        e.eventTags,
+                        e.dayOfWeek,
+                        e.month,
+                        e.dayOfMonth,
+                    ]
+                );
+            }
+
+            await connection.commit();
+            console.log("deleted and inserted successfully")
+        } catch (dbErr) {
+            await connection.rollback();
+            throw dbErr;
+        } finally {
+            connection.release();
+        }
 
         res.json({ events, count: events.length });
     } catch (error) {
