@@ -103,7 +103,7 @@ router.get("/decks", async (req, res) => {
   try {
     const { query, name } = req.query;
     const page = parseInt(req.query.page as string) || 1;
-    const limit = 40
+    const limit = 20
     const offset = (page - 1) * limit;
 
     const conditions: string[] = ["title LIKE ?"];

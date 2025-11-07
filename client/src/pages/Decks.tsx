@@ -165,11 +165,11 @@ export default function Decks() {
                     )}
                 </div>
                 {totalPages >= 0 && (
-                    <div className="flex justify-center items-center mt-10 gap-4">
+                    <div className="flex justify-center items-center mt-10 gap-4 pb-10">
                         <button
                             onClick={() => changePage(page - 1)}
                             disabled={page === 1}
-                            className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
+                            className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50 hover:bg-gray-300 transition-colors"
                         >
                             ←
                         </button>
@@ -179,7 +179,7 @@ export default function Decks() {
                         <button
                             onClick={() => changePage(page + 1)}
                             disabled={page === totalPages}
-                            className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
+                            className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50 hover:bg-gray-300 transition-colors"
                         >
                             →
                         </button>

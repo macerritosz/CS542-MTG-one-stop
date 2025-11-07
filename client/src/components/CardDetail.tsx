@@ -65,6 +65,8 @@ export default function CardInfo(){
     const [suggestions, setSuggestions] = useState<string[]>([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [decks, setDecks] = useState<Deck[]>([]);
+    const [alternatePrints, setAlternatePrints] = useState<Card[]>([]);
+    const [currentPrintIndex, setCurrentPrintIndex] = useState(0);
 
 
     const colors: Record<string, string> = {
@@ -148,11 +150,18 @@ export default function CardInfo(){
             setKeywords(data.keywords)
             setProducedMana(data.produced_mana)
             setColorIdentity(data.color_identity)
+            
+            const printsRes = await fetch(`http://localhost:5715/api/cardssimple?query=${encodeURIComponent(data.card.name)}`);
+            const printsData = await printsRes.json();
+            setAlternatePrints(printsData.cards);
+
+            const currentIndex = printsData.cards.findIndex((c: Card) => c.cardID === cardID);
+            setCurrentPrintIndex(currentIndex >= 0 ? currentIndex : 0);
 
             res = await fetch(`http://localhost:5715/api/cardsindecks?cardID=${encodeURIComponent(cardID!)}`);
             data = await res.json();
             setDecks(data.decks)
-            console.log(data.decks.length)
+            
           } catch (err) {
             console.error("Failed to fetch card:", err);
           }
@@ -199,6 +208,15 @@ export default function CardInfo(){
         });
     }
 
+    function handleImageClick() {
+        if (alternatePrints.length <= 1) return;
+        const nextIndex = (currentPrintIndex + 1) % alternatePrints.length;
+        const nextCard = alternatePrints[nextIndex];
+        if (nextCard) navigate(`/cards/${nextCard.cardID}`);
+        
+    }
+
+    
     function handleChange(e: React.ChangeEvent<HTMLInputElement>){
         setQuery(e.target.value);
     }
@@ -275,16 +293,17 @@ export default function CardInfo(){
                             </form>
 
                             <img
-                            src={card.image_uris}
-                            alt={`Card ${card.cardID}`}
-                            className="w-[380px] h-auto object-cover rounded-2xl shadow-md"
+                                src={card.image_uris}
+                                alt={`Card ${card.cardID}`}
+                                className="w-[380px] h-auto object-cover rounded-2xl shadow-md"
+                                onClick={handleImageClick}
                             />
                             <div className="flex flex-col items-center gap-3 w-[275px] mt-8">
                                 <a
                                     href={card.purchase_uris}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="group inline-flex w-full items-center justify-center gap-2 border-2 border-blue-500 text-blue-500 font-semibold px-8 py-3 rounded-lg hover:bg-blue-500 hover:text-white transition-all duration-200"
+                                    className="group inline-flex w-full items-center justify-center gap-2 border-2 border-blue-500 text-blue-500 font-semibold px-8 py-3 rounded-lg hover:bg-blue-500 hover:text-white transition-all duration-20 whitespace-nowrap"
                                 >
                                     <Store className="w-5 h-5 text-blue-500 group-hover:text-white transition-colors duration-200" />
                                     <span>Buy Card On TCG Player</span>
@@ -294,7 +313,7 @@ export default function CardInfo(){
                                     href={card.scryfall_uri}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="group inline-flex w-full items-center justify-center gap-2 border-2 border-purple-500 text-purple-500 font-semibold px-8 py-3 rounded-lg hover:bg-purple-500 hover:text-white transition-all duration-200"
+                                    className="group inline-flex w-full items-center justify-center gap-2 border-2 border-purple-500 text-purple-500 font-semibold px-8 py-3 rounded-lg hover:bg-purple-500 hover:text-white transition-all duration-200 whitespace-nowrap"
                                 >
                                     <Search className="w-5 h-5 text-purple-500 group-hover:text-white transition-colors duration-200" />
                                     <span>Find Card On Scryfall</span>
@@ -339,7 +358,7 @@ export default function CardInfo(){
                                 )}
 
                                 <div className='grid grid-cols-2 gap-x-15 gap-y-4 mt-8 text-lg'>
-                                    <div className='flex gap-x-12'>
+                                    <div className='flex gap-x-15'>
                                         <span className='text-gray-500 font-medium'>Rarity:</span>
                                         <span className='text-gray-700 capitalize'>{card.rarity}</span>
                                     </div>
@@ -351,35 +370,35 @@ export default function CardInfo(){
                                         </div>
                                     )}
                                     
-                                    {card.power !== null && (
+                                    {card.power !== null && String(card.power) !== 'None' && (
                                         <div className='flex justify-between'>
                                             <span className='text-gray-500 font-medium'>Power:</span>
                                             <span className='text-gray-700'>{card.power}</span>
                                         </div>
                                     )}
                                     
-                                    {card.toughness !== null && (
+                                    {card.toughness !== null && String(card.toughness) !== 'None' && (
                                         <div className='flex justify-between'>
                                             <span className='text-gray-500 font-medium'>Toughness:</span>
                                             <span className='text-gray-700'>{card.toughness}</span>
                                         </div>
                                     )}
                                     
-                                    {card.loyalty && (
+                                    {card.loyalty && card.loyalty !== 'None' && (
                                         <div className='flex justify-between'>
                                             <span className='text-gray-500 font-medium'>Loyalty:</span>
                                             <span className='text-gray-700'>{card.loyalty}</span>
                                         </div>
                                     )}
                                     
-                                    {card.price_usd !== null && (
+                                    {card.price_usd !== null && String(card.price_usd) !== '0.00' && (
                                         <div className='flex justify-between'>
                                             <span className='text-gray-500 font-medium'>Price:</span>
                                             <span className='text-gray-700'>${card.price_usd}</span>
                                         </div>
                                     )}
                                     
-                                    {card.price_foil_usd !== null && (
+                                    {card.price_foil_usd !== null && String(card.price_foil_usd) !== '0.00' && (
                                         <div className='flex justify-between'>
                                             <span className='text-gray-500 font-medium'>Foil Price:</span>
                                             <span className='text-gray-700'>${card.price_foil_usd}</span>
@@ -507,8 +526,8 @@ export default function CardInfo(){
                     </div>
                     {decks.length > 0 ? (
                         <div className='flex flex-col items-center mt-30'>
-                            <h1 className='text-gray-600 text-5xl font-semibold underline'>Popular Decks Using Card:</h1>
-                            <div className="mt-12 px-[12%] grid grid-cols-1md:grid-cols-2 lg:grid-cols-3 justify--items-center gap-6 ">
+                            <h2 className='text-gray-600 text-3xl font-semibold mb-8'>Popular Decks Using This Card</h2>
+                            <div className=" px-[12%] grid grid-cols-1md:grid-cols-2 lg:grid-cols-3 justify--items-center gap-6 ">
                                     {decks.map((deck) => (
                                         <a
                                         key={deck.deckID}
