@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom';
 import background from '../assets/search_background.jpg'
 import { useAuth } from '../contexts/AuthContext';
+import CreateDeckModal from '../components/CreateDeckModal';
+import { Heart } from 'lucide-react';
 
 interface Deck {
     deckID: number;
@@ -24,6 +26,8 @@ export default function Decks() {
     const [totalPages, setTotalPages] = useState(1);
     const [selected, setSelected] = useState('All Decks')
     const { isAuthenticated, display_name } = useAuth();
+    const [isCreateDeckOpen, setIsCreateDeckOpen] = useState(false);
+    const [savedDecks, setSavedDecks] = useState<number[]>([]);
 
     const params = new URLSearchParams(location.search);
 
@@ -54,6 +58,97 @@ export default function Decks() {
         fetchDecks();
     }, [location.search, selected]);
 
+    useEffect(() => {
+        if (isCreateDeckOpen) document.body.style.overflow = 'hidden';
+        else document.body.style.overflow = 'auto';
+    
+        return () => {
+          document.body.style.overflow = 'auto';
+        };
+    }, [isCreateDeckOpen]);
+
+    useEffect(() => {
+        async function fetchSavedDecks() {
+          if (!isAuthenticated) return;
+          try {
+            const res = await fetch(`http://localhost:5715/api/saveddecks?name=${encodeURIComponent(display_name!)}`);
+            const data = await res.json();
+            console.log(data)
+            if (res.ok && Array.isArray(data.savedDecks)) {
+              setSavedDecks(data.savedDecks.map((d: any) => d.deckID));
+            }
+          } catch (err) {
+            console.error("Failed to fetch saved decks:", err);
+          }
+        }
+        fetchSavedDecks();
+    }, [isAuthenticated, display_name]);
+    
+
+    async function handleCreateDeck(deckData: any) {
+        try {
+            const res = await fetch("http://localhost:5715/api/decks", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(deckData),
+            });
+            const data = await res.json();
+    
+            if (res.ok) {
+                console.log("Deck created:", data);
+                setIsCreateDeckOpen(false);
+                navigate(`./${data.deckID}`)
+            }
+        } catch (error) {
+            console.error("Something went wrong", error);
+        }
+    }
+
+    async function handleSaveDeck(deckID: string) {
+        try {
+            const res = await fetch("http://localhost:5715/api/savedeck", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({deckID, name: display_name}),
+            });
+            const data = await res.json();
+    
+            if (res.ok) {
+                console.log("Deck saved!");
+            }
+
+        } catch (error) {
+            console.error("Something went wrong", error);
+        }
+    }
+    async function handleRemoveSaveDeck(deckID: string) {
+        try {
+            const res = await fetch("http://localhost:5715/api/removesavedeck", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({deckID, name: display_name}),
+            });
+            const data = await res.json();
+    
+            if (res.ok) {
+                console.log("Deck unsaved!");
+            }
+
+        } catch (error) {
+            console.error("Something went wrong", error);
+        }
+    }
+
+    function toggleSave(deckID: number) {
+    if (savedDecks.includes(deckID)) {
+        handleRemoveSaveDeck(deckID.toString());
+        setSavedDecks(savedDecks.filter(id => id !== deckID));
+    } else {
+        handleSaveDeck(deckID.toString());
+        setSavedDecks([...savedDecks, deckID]);
+    }
+    }
+    
     function changePage(newPage: number) {
         navigate(`/decks?query=${encodeURIComponent(query)}&page=${newPage}`);
     }
@@ -123,9 +218,9 @@ export default function Decks() {
                                     Sort
                                 </button>
                                 {isAuthenticated && (
-                                    <a href="/createdeck" className='px-3 py-2 rounded-lg outline-none ring-1 ring-blue-500 text-blue-500 hover:scale-105 transition-all duration-200 whitespace-nowrap'>
+                                    <button type="button" onClick={() => setIsCreateDeckOpen(true)} className='px-3 py-2 rounded-lg outline-none ring-1 ring-blue-500 text-blue-500 hover:scale-105 transition-all duration-200 whitespace-nowrap'>
                                         Create Deck
-                                    </a>
+                                    </button>
                                 )}
                             </div>
                             
@@ -138,10 +233,26 @@ export default function Decks() {
                         decks.map((deck) => {
                             return (
                                 <a
-                                  key={deck.deckID}
-                                  href={`/decks/${deck.deckID}`}
-                                  className="relative group block rounded-xl overflow-hidden shadow-lg hover:scale-105 transition-transform duration-300"
-                                >
+                                    key={deck.deckID}
+                                    href={`/decks/${deck.deckID}`}
+                                    className="relative group block rounded-xl overflow-hidden shadow-lg hover:scale-105 transition-transform duration-300"
+                                    >
+                                    <button
+                                        type="button"
+                                        onClick={(e) => {
+                                        e.preventDefault();
+                                        toggleSave(deck.deckID);
+                                        }}
+                                        className="absolute top-3 right-3 z-20"
+                                    >
+                                        <Heart
+                                        className={`w-10 h-10 transition-all duration-200 ${
+                                            savedDecks.includes(deck.deckID)
+                                            ? "fill-red-500 text-red-500"
+                                            : "text-red-500 hover:fill-red/40"
+                                        }`}
+                                        />
+                                    </button>
                                   <div className="grid grid-cols-2 grid-rows-2 w-full aspect-[4/3]">
                                     {deck.cards.map((card) => (
                                       <div key={card.cardID} className="overflow-hidden relative">
@@ -186,6 +297,11 @@ export default function Decks() {
                     </div>
                 )}
             </div>
+            <CreateDeckModal
+                isOpen={isCreateDeckOpen}
+                onClose={() => setIsCreateDeckOpen(false)}
+                onApply={handleCreateDeck}
+            />
         </div>
     );
 }
@@ -194,14 +310,15 @@ export default function Decks() {
 
 TODO- 
 - deck needs a certain amount of cards to publish
-- advanced search overlay modal
 
 - i dont think we need colors to card
+
 - trigger idea- amount of decks this card is in - derived value for card 
 - trigger idea- delete quantity- when player inserts card thats already in deck it just increments quanitty by one
+- trigger idea- inserting random color design for player when created
+- trigger idea- incrementing popularity count of both cards when used in a deck or when deck is saved by user
+    -- popular decks and cards on profile
 
-- decks the cards are in on bottom of page, show popular ones
-- add card to deck functionality on card detail page
 - card combos implemented
 - combs cards are in
 - when hover over card pans out to left or right some info about the card

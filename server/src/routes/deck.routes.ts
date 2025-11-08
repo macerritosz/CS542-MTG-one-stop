@@ -17,20 +17,80 @@ router.post("/decks", async (req, res) => {
       [name, result.insertId ]
     );
 
-    res.status(201).json({ title, format, is_private });
+    res.status(201).json({ title, format, is_private, deckID: result.insertId });
   } catch (error) {
     // TODO: only care for title uniqueness relative to whether public or private
     res.status(500).json({ error: "Title already exists already exists" });
   }
 });
 
+router.post("/savedeck", async (req, res) => {
+  try {
+    const { deckID, name } = req.body;
+    
+    await pool.query(
+      "INSERT INTO Players_Save_Decks (display_name, deckID ) VALUES (?, ?)",
+      [name, deckID ]
+    );
+
+    res.status(201).json({ message: "Deck saved!!" });
+  } catch (error) {
+    res.status(500).json({ error: "Error in saving deck" });
+  }
+});
+
+router.post("/removesavedeck", async (req, res) => {
+  try {
+    const { deckID, name } = req.body;
+    
+    await pool.query(
+      "DELETE FROM Players_Save_Decks WHERE display_name = ? and deckID = ?",
+      [name, deckID ]
+    );
+
+    res.status(201).json({ message: "Removed save from deck!!" });
+  } catch (error) {
+    res.status(500).json({ error: "Error in unsaving deck" });
+  }
+});
+
+router.get("/saveddecks", async (req, res) => {
+  try {
+    const { name } = req.query;
+    
+    const [result]: any = await pool.query(
+      "SELECT deckID FROM Players_Save_Decks WHERE display_name = ?",
+      [name ]
+    );
+
+    res.status(201).json({ savedDecks: result });
+  } catch (error) {
+    res.status(500).json({ error: "Error in unsaving deck" });
+  }
+});
+
 router.post("/decks/card", async (req, res) => {
   try {
-    const { cardID, deckID, quantity } = req.body;
-    await pool.query(
-      "INSERT INTO Cards_In_Decks (deckID, cardID, quantity ) VALUES (?, ?, ?)",
-      [deckID, cardID, quantity]
+    const { cardID, deckID } = req.body;
+    
+    const [duplicate]: any = await pool.query(
+      "SELECT quantity FROM Cards_In_Decks WHERE deckID = ? AND cardID = ?",
+      [deckID, cardID]
     );
+  
+    if(duplicate && duplicate.length > 0) {
+      const new_quantity = duplicate[0].quantity + 1
+      await pool.query(
+        "UPDATE Cards_In_Decks SET quantity = ? WHERE deckID = ? AND cardID =?",
+        [new_quantity, deckID, cardID]
+      );
+    } else {
+      await pool.query(
+        "INSERT INTO Cards_In_Decks (deckID, cardID ) VALUES (?, ?)",
+        [deckID, cardID]
+      );
+    }
+
     res.status(201).json({ message: `Added card to deck ${deckID}` });
 
   } catch (error) {
@@ -55,13 +115,13 @@ router.get("/decks/info", async (req, res) => {
     const cardIDs = cards.map((card: any) => card.cardID);
 
     if (cardIDs.length === 0) {
-      return res.status(404).json({ error: "No cards found in deck" });
+      return res.status(201).json({ title: deck[0].title, format: deck[0].format });
     }
 
     const placeholders = cardIDs.map(() => '?').join(',');
 
     const [card_info]: any = await pool.query(
-      `SELECT image_uris, cardID FROM Card WHERE cardID IN (${placeholders})`,
+      `SELECT image_uris, cardID FROM Card WHERE cardID IN (${placeholders}) LIMIT 8`,
       cardIDs
     );
 
@@ -75,25 +135,73 @@ router.get("/decks/me", async (req, res) => {
   try {
     const { name } = req.query;
 
-    const [ids]: any = await pool.query(
+    const [idsBuilt]: any = await pool.query(
       "SELECT deckID FROM Players_Build_Decks WHERE display_name = ?",
       [name] 
     );
 
-    const deckIDs = ids.map((deck: any) => deck.deckID);
+    const deckIDsBuilt = idsBuilt.map((deck: any) => deck.deckID);
+    let decksBuilt: any = []
 
-    if (deckIDs.length === 0) {
-      return res.status(404).json({ error: "No decks found" });
+    if (deckIDsBuilt.length !== 0) {
+      const placeholders = deckIDsBuilt.map(() => '?').join(',');
+      [decksBuilt] = await pool.query(
+        `SELECT deckID, title FROM Deck WHERE deckID IN (${placeholders}) LIMIT 8`,
+        deckIDsBuilt
+      );
+
+      decksBuilt = await Promise.all(
+        decksBuilt.map(async (deck: any) => {
+          const [cards]: any = await pool.query(
+            `SELECT c.cardID, c.image_uris
+             FROM Cards_In_Decks cid
+             JOIN Card c ON cid.cardID = c.cardID
+             WHERE cid.deckID = ?
+             LIMIT 4`,
+            [deck.deckID]
+          );
+          return {
+            ...deck,
+            cards, 
+          };
+        })
+      );
     }
 
-    const placeholders = deckIDs.map(() => '?').join(',');
-    const [decks]: any = await pool.query(
-      `SELECT deckID, title FROM Deck WHERE deckID IN (${placeholders})`,
-      deckIDs
+    const [idsSaved]: any = await pool.query(
+      "SELECT deckID FROM Players_Save_Decks WHERE display_name = ?",
+      [name] 
     );
-    // concatenate players saved decks i assume
+
+    const deckIDsSaved = idsSaved.map((deck: any) => deck.deckID);
+    let decksSaved: any = []
+
+    if (deckIDsSaved.length !== 0) {
+      const placeholders = deckIDsSaved.map(() => '?').join(',');
+      [decksSaved] = await pool.query(
+        `SELECT deckID, title FROM Deck WHERE deckID IN (${placeholders})`,
+        deckIDsSaved
+      );
+
+      decksSaved= await Promise.all(
+        decksSaved.map(async (deck: any) => {
+          const [cards]: any = await pool.query(
+            `SELECT c.cardID, c.image_uris
+             FROM Cards_In_Decks cid
+             JOIN Card c ON cid.cardID = c.cardID
+             WHERE cid.deckID = ?
+             LIMIT 4`,
+            [deck.deckID]
+          );
+          return {
+            ...deck,
+            cards, 
+          };
+        })
+      );
+    }
   
-    res.status(200).json({decks});
+    res.status(200).json({decksBuilt, decksSaved});
   } catch (error) {
     res.status(500).json({ error: "Failed to get decks" });
   }

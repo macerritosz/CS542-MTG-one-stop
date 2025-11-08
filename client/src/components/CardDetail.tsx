@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useParams } from "react-router-dom";
 import { useNavigate } from 'react-router-dom';
-import { CircleOff, CircleCheckBig, Store, Search } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { CircleOff, CircleCheckBig, Store, Search, Plus, ChevronDown } from 'lucide-react';
 
 interface Card {
     cardID: string;
@@ -67,6 +68,9 @@ export default function CardInfo(){
     const [decks, setDecks] = useState<Deck[]>([]);
     const [alternatePrints, setAlternatePrints] = useState<Card[]>([]);
     const [currentPrintIndex, setCurrentPrintIndex] = useState(0);
+    const [showDeckDropdown, setShowDeckDropdown] = useState(false);
+    const [userDecks, setUserDecks] = useState<Deck[]>([]);
+    const { display_name } = useAuth();
 
 
     const colors: Record<string, string> = {
@@ -187,8 +191,55 @@ export default function CardInfo(){
         };
         const timeout = setTimeout(fetchCards, 250);
         return () => clearTimeout(timeout);
-      }, [query]);
+    }, [query]);
 
+    useEffect(() => {
+        async function fetchUserDecks() {
+          try {
+            const res = await fetch(`http://localhost:5715/api/decks/me?name=${encodeURIComponent(display_name!)}`);
+            const data = await res.json();
+            setUserDecks(data.decksBuilt);
+          } catch (error) {
+            console.error("Failed to fetch decks:", error);
+          }
+        }
+        if (display_name) {
+          fetchUserDecks();
+        }
+    }, [display_name]);
+
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+          if (showDeckDropdown) {
+            const target = e.target as HTMLElement;
+            if (!target.closest('.deck-dropdown-container')) {
+              setShowDeckDropdown(false);
+            }
+          }
+        };
+        
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [showDeckDropdown]);
+
+
+    async function addCardToDeck(deckID: number) {
+        try {
+          const quantity = 1;
+          const res = await fetch('http://localhost:5715/api/decks/card', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ cardID: card?.cardID, deckID, quantity }),
+          });
+          
+          if (res.ok) {
+            console.log('Card added successfully');
+            setShowDeckDropdown(false);
+          }
+        } catch (err) {
+          console.error("Failed to add card to deck:", err);
+        }
+    }
 
     function renderOracleText(text: string): React.ReactNode[] {
         const parts = text.split(/(\{.*?\})/g);
@@ -260,36 +311,66 @@ export default function CardInfo(){
                     <div className="max-w-[1400px] mx-auto mt-20 flex gap-10 justify-center">
                         <div className="sticky top-20 h-fit self-start flex-shrink-0 flex flex-col items-center">
             
-                        <form onSubmit={handleSubmit} className="relative w-max mb-4 z-50">
-                            <div className="relative w-120">
-                                <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 z-10" />
-                                <input
-                                    className="pl-10 border border-gray-400 rounded-lg px-4 py-2 w-full text-black bg-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-gray-500"
-                                    type="text"
-                                    id="query"
-                                    name="query"
-                                    placeholder="Search for cards"
-                                    value={query}
-                                    onChange={handleChange}
-                                    onFocus={() => query && setShowSuggestions(true)}
-                                    onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
-                                    autoComplete="off"
-                                />
-
-                                {showSuggestions && suggestions.length > 0 && (
-                                <ul className="absolute z-20 bg-white border border-gray-200 rounded-lg mt-1 w-full max-h-48 overflow-y-auto shadow-lg">
-                                    {suggestions.map((name, index) => (
-                                    <li
-                                        key={index}
-                                        onClick={() => handleSelectCard(name)}
-                                        className="px-4 py-2 text-gray-700 hover:bg-purple-100 cursor-pointer transition-all"
+                            <form onSubmit={handleSubmit} className="relative w-max mb-4 z-50 flex gap-5 justify-start items-center">
+                                <div className="relative w-80">
+                                    <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 z-10" />
+                                    <input
+                                        className="pl-10 border border-gray-400 rounded-lg px-4 py-2 w-full text-black bg-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-gray-500"
+                                        type="text"
+                                        id="query"
+                                        name="query"
+                                        placeholder="Search for cards"
+                                        value={query}
+                                        onChange={handleChange}
+                                        onFocus={() => query && setShowSuggestions(true)}
+                                        onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+                                        autoComplete="off"
+                                    />
+                                    {showSuggestions && suggestions.length > 0 && (
+                                        <ul className="absolute z-20 bg-white border border-gray-200 rounded-lg mt-1 w-full max-h-48 overflow-y-auto shadow-lg">
+                                            {suggestions.map((name, index) => (
+                                            <li
+                                                key={index}
+                                                onClick={() => handleSelectCard(name)}
+                                                className="px-4 py-2 text-gray-700 hover:bg-purple-100 cursor-pointer transition-all"
+                                            >
+                                                {name}
+                                            </li>
+                                            ))}
+                                        </ul>
+                                    )}
+                                </div>
+                                <div className="relative deck-dropdown-container">
+                                    <button
+                                        onClick={() => setShowDeckDropdown(!showDeckDropdown)}
+                                        className="px-3 py-2 border border-purple-400 rounded-lg text-purple-500 hover:cursor-pointer focus:outline-none focus:ring-1 focus:ring-purple-500 flex items-center gap-2"
                                     >
-                                        {name}
-                                    </li>
-                                    ))}
-                                </ul>
-                                )}
-                            </div>
+                                        <Plus className="w-4 h-4" />
+                                        Add to Deck
+                                        <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${showDeckDropdown ? 'rotate-180' : ''}`} />
+                                    </button>
+
+                                    {showDeckDropdown && (
+                                        <div className="absolute top-full left-0 mt-2 bg-white border border-gray-300 rounded-lg shadow-xl z-50 w-full max-h-[300px] overflow-y-auto">
+                                        {userDecks.length > 0 ? (
+                                            userDecks.map((deck) => (
+                                            <button
+                                                key={deck.deckID}
+                                                onClick={() => addCardToDeck(deck.deckID)}
+                                                className="w-full text-left px-3 py-2 hover:bg-purple-100 transition-colors border-b border-gray-100 last:border-b-0 flex flex-col gap-1"
+                                            >
+                                                <span className="text-gray-700 text-center">{deck.title}</span>
+
+                                            </button>
+                                            ))
+                                        ) : (
+                                            <div className="px-5 py-4 text-gray-500 text-center">
+                                            No decks available
+                                            </div>
+                                        )}
+                                        </div>
+                                    )}
+                                </div>
                             </form>
 
                             <img
@@ -319,7 +400,6 @@ export default function CardInfo(){
                                     <span>Find Card On Scryfall</span>
                                 </a>
                             </div>
-
                         </div>
                         <div className="flex-1 min-w-0 max-w-3xl max-h-[80vh] overflow-y-scroll [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                             <div className='flex flex-col items-center'>
@@ -339,7 +419,7 @@ export default function CardInfo(){
                                         )}
                                 </div>
                                 {keywords ? (
-                                    <div className='flex gap-2 mt-3'>
+                                    <div className="flex flex-wrap justify-center gap-x-3 gap-y-2 mt-3 text-center">
                                         {keywords.map((item, index) => (
                                             <span key={index} className='text-3xl text-gray-400'>
                                                 {item.keyword}{index < keywords.length - 1 ? ', ' : ''}
@@ -503,7 +583,7 @@ export default function CardInfo(){
                                                             
 
                                 {legalities ? (
-                                    <div className='grid grid-cols-3 gap-9 gap-x-11 text-gray-600 mt-5 mb-50'> 
+                                    <div className='grid grid-cols-3 gap-9 gap-x-11 text-gray-600 mt-5 ml-[10%] mb-50'> 
                                         {Object.entries(legalities).sort(([a], [b]) => a.localeCompare(b)).map(([format, value]) => (
                                             format !== 'cardID' ? (
                                                 <div key={format} className='flex items-center space-x-2'>

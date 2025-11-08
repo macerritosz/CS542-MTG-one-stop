@@ -189,7 +189,7 @@ export default function Cards() {
             try {
                 const res = await fetch(`http://localhost:5715/api/decks/me?name=${encodeURIComponent(display_name!)}`);
                 const data = await res.json();
-                setDecks(data.decks);
+                setDecks(data.decksBuilt);
             } catch (error) {
                 console.error("Failed to fetch decks:", error);
             }

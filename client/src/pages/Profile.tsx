@@ -5,7 +5,9 @@ import clockIcon from '../assets/clock.svg';
 import shopIcon from '../assets/shop.svg';
 import calendarIcon from '../assets/calendar.svg';
 import { useAuth } from '../contexts/AuthContext';
-
+import CreateDeckModal from '../components/CreateDeckModal';
+import { Edit } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface Event {
     eventName: string;
@@ -19,11 +21,49 @@ interface Event {
     dayOfMonth: string;
 }
 
+interface Deck {
+    deckID: number;
+    title: string;
+    format: string;
+    cards: Card[];
+}
+
+interface Card {
+    cardID: string;
+    image_uris: string;
+}
+
 export default function Profile() {
     const [targetUrl, setTargetUrl] = useState<string>("");
     const [events, setEvents] = useState<Event[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
     const { display_name } = useAuth();
+    const [isCreateDeckOpen, setIsCreateDeckOpen] = useState(false);
+    const navigate = useNavigate();
+    const initial = display_name ? display_name[0]!.toUpperCase() : 'U';
+    const [decksbuilt, setDecksBuilt] = useState<Deck[] | null>(null);
+    const [deckssaved, setDecksSaved] = useState<Deck[] | null>(null);
+    
+    const quotes = [
+        "The spark of a Planeswalker ignites the multiverse.",
+        "In the gathering, all paths converge.",
+        "Power is nothing without the will to wield it.",
+        "Every card tells a story, every deck a legend.",
+        "The greatest magic is the friends we summon along the way."
+    ];
+      
+    const colors = [
+        'bg-red-500',
+        'bg-blue-600',
+        'bg-green-600',
+        'bg-purple-600',
+        'bg-orange-500',
+        'bg-pink-600',
+        'bg-indigo-600'
+    ];
+
+    const [currentQuote, setCurrentQuote] = useState(0);
+    const [profileColor] = useState(colors[Math.floor(Math.random() * colors.length)]);
 
     useEffect(() => {
         if (!display_name) return;
@@ -32,16 +72,22 @@ export default function Profile() {
           try {
             const res = await fetch(`http://localhost:5715/api/events?player_name=${encodeURIComponent(display_name!)}`);
             const data = await res.json();
-            setEvents(data.events);
+            setEvents(data.events.slice(0,8));
           } catch (err) {
             console.error("Failed to fetch events:", err);
           }
         }
-      
         fetchEvents();
       }, [display_name]);
 
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setCurrentQuote((prev) => (prev + 1) % quotes.length);
+        }, 5000);
     
+        return () => clearInterval(interval);
+    }, []);
+
     useEffect (() => { 
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
@@ -73,7 +119,50 @@ export default function Profile() {
             console.error("Geolocation didn't work");
         }
     }, []);
+
+    useEffect(() => {
+        if (isCreateDeckOpen) document.body.style.overflow = 'hidden';
+        else document.body.style.overflow = 'auto';
     
+        return () => {
+          document.body.style.overflow = 'auto';
+        };
+    }, [isCreateDeckOpen]);
+
+    useEffect(() => {
+        async function fetchDecks() {
+            try {
+                const res = await fetch(`http://localhost:5715/api/decks/me?name=${encodeURIComponent(display_name!)}`);
+                const data = await res.json();
+                setDecksBuilt(data.decksBuilt);
+                setDecksSaved(data.decksSaved);
+                console.log(data)
+            } catch (error) {
+                console.error("Failed to fetch decks:", error);
+            }
+        };
+        fetchDecks();
+    }, []);
+
+    async function handleCreateDeck(deckData: any) {
+        try {
+            const res = await fetch("http://localhost:5715/api/decks", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(deckData),
+            });
+            const data = await res.json();
+
+            if (res.ok) {
+                console.log("Deck created:", data);
+                setIsCreateDeckOpen(false);
+                navigate(`../decks/${data.deckID}`)
+            }
+        } catch (error) {
+            console.error("Something went wrong", error);
+        }
+    }
+
     async function getAddressFromCoords(lat: number, lng: number): Promise<string | null> {
         try {
             const res = await fetch("http://localhost:5715/api/reverse-geocode", {
@@ -104,7 +193,7 @@ export default function Profile() {
             
             res = await fetch(`http://localhost:5715/api/events?player_name=${encodeURIComponent(display_name!)}`);
             const data = await res.json();
-            setEvents(data.events);
+            setEvents(data.events.slice(0,8));
 
         } catch (error) {
             console.error("Error fetching events: ", error);
@@ -114,25 +203,43 @@ export default function Profile() {
 
     return (
         <>
-            <div className="flex flex-col items-center justify-center h-[50vh] bg-blue-300"> 
-                <h1 className="text-9xl font-bold text-white">Welcome Back, {display_name}</h1>
-                <p className="mt-4 text-2xl text-white">Decks Created, Saved Decks, Information</p>
-                <button className="mt-4 px-5 py-2 text-2xl text-white rounded-full border hover:bg-gray-500 active:bg-gray-700 
-                transform active:scale-95 transition-all duration-150 shadow-lg disabled:opacity-50 disabled:hover:bg-gray-700 disabled:active:scale-100 disabled:transform-none" 
-                    disabled={loading || !targetUrl}
-                    onClick={() => getEventData(targetUrl)} 
-                >
-                    {loading ? "Loading..." : (events.length > 0 ? "Refresh Data" : "Get Event Data")}
-                </button>
+            <div className="flex flex-col items-center justify-center h-[40vh] bg-gray-400"> 
+                <div className="flex items-center gap-30">
+                    <div className={`${profileColor} ml-20 rounded-full w-60 h-60 flex items-center justify-center text-white text-9xl font-bold shadow-lg`}>
+                        {initial}
+                    </div>
+                    <div className="flex flex-col">
+                        <h1 className="text-7xl font-bold text-white">Welcome Back,</h1>
+                        <div className="flex items-center gap-4 mt-2">
+                            <h1 className="text-7xl font-bold text-white">{display_name}</h1>
+                            <a href="/" className="ml-2 flex items-center">
+                                <Edit className="w-9 h-9 text-gray-600 hover:text-blue-500 cursor-pointer mt-4"/>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <p className="mt-8 text-3xl text-white italic max-w-5xl text-center transition-opacity duration-500">
+                    "{quotes[currentQuote]}"
+                </p>
             </div>
-
-            <div className="flex flex-col items-center">
+            <div>
                 {events.length > 0 && (
-                    <div className="mt-10">
-                        <h2 className="text-4xl font-bold text-blue text-center mb-8">
-                            Upcoming Events ({events.length})
-                        </h2>
-                        <div className="grid lg:grid-cols-4 gap-4">
+                    <div className="mt-16 flex flex-col items-center gap-y-4">
+                       <div className="flex items-start justify-center gap-10 mb-5">
+                            <h2 className="text-4xl font-bold text-blue text-center -mr-5">
+                                Upcoming Events ({events.length})
+                            </h2>
+                            <p className="text-4xl">•</p>
+                            <button 
+                                className="px-5 py-2 text-2xl text-blue rounded-xl border hover:bg-gray-500 hover:text-white active:bg-gray-700 -ml-5 
+                                    transform active:scale-95 transition-all duration-150 shadow-lg disabled:opacity-50 disabled:hover:bg-gray-700 disabled:active:scale-100 disabled:transform-none" 
+                                disabled={loading || !targetUrl}
+                                onClick={() => getEventData(targetUrl)} 
+                            >
+                                {loading ? "Loading..." : (events.length > 0 ? "Refresh Data" : "Get Event Data")}
+                            </button>
+                        </div>
+                        <div className="grid lg:grid-cols-4 gap-3">
                             {events.map((event, index) => (
                                 <div 
                                     key={index} 
@@ -177,6 +284,89 @@ export default function Profile() {
                                 </div>
                             ))}
                         </div>
+                        {decksbuilt && decksbuilt.length > 0 ? (
+                            <>
+                                <div className="flex items-start justify-center gap-10 mb-5 mt-16">
+                                    <h2 className="text-4xl font-bold text-blue text-center -mr-5">
+                                        Your Decks ({decksbuilt.length})
+                                    </h2>
+                                    <p className="text-4xl">•</p>
+                                    <button type="button" onClick={() => setIsCreateDeckOpen(true)} className='px-5 py-2 text-2xl hover:text-white text-blue rounded-xl border hover:bg-gray-500 active:bg-gray-700 -ml-5 
+                                            transform active:scale-95 transition-all duration-150 shadow-lg'>
+                                        Create Deck
+                                    </button>
+                                </div>
+                                <div className="grid lg:grid-cols-4 gap-3 px-[6%]">
+                                        {decksbuilt.map((deck) => {
+                                            return (
+                                                <a
+                                                key={deck.deckID}
+                                                href={`/decks/${deck.deckID}`}
+                                                className="relative group block rounded-xl overflow-hidden shadow-lg hover:scale-105 transition-transform duration-300"
+                                                >
+                                                <div className="grid grid-cols-2 grid-rows-2 w-full aspect-[4/3]">
+                                                    {deck.cards.map((card) => (
+                                                    <div key={card.cardID} className="overflow-hidden relative">
+                                                        <img
+                                                        src={card.image_uris}
+                                                        alt={`Card ${card.cardID}`}
+                                                        className="w-full h-full object-cover object-top"
+                                                        />
+                                                    </div>
+                                                    ))}
+                                                </div>
+                                                <div className="absolute bottom-0 flex justify-between w-full bg-gradient-to-t from-black/70 to-transparent p-2">
+                                                    <span className="ml-3 text-white text-xl font-semibold">{deck.title}</span>
+                                                    <span className="mr-3 text-gray-50 opacity-70 text-xl font-medium">{deck.format}</span>
+                                                </div>
+                                                </a>
+                                            );
+                                        })}
+                                </div>
+                            </>
+                        ) : (null)}
+
+                        {deckssaved && deckssaved.length > 0 ? (
+                            <>
+                                <div className="flex items-start justify-center gap-10 mb-5 mt-16">
+                                    <h2 className="text-4xl font-bold text-blue text-center -mr-5">
+                                        Saved Decks ({deckssaved.length})
+                                    </h2>
+                                </div>
+                                <div className="grid lg:grid-cols-4 gap-3 px-[6%]">
+                                        {deckssaved.map((deck) => {
+                                            return (
+                                                <a
+                                                key={deck.deckID}
+                                                href={`/decks/${deck.deckID}`}
+                                                className="relative group block rounded-xl overflow-hidden shadow-lg hover:scale-105 transition-transform duration-300"
+                                                >
+                                                <div className="grid grid-cols-2 grid-rows-2 w-full aspect-[4/3]">
+                                                    {deck.cards.map((card) => (
+                                                    <div key={card.cardID} className="overflow-hidden relative">
+                                                        <img
+                                                        src={card.image_uris}
+                                                        alt={`Card ${card.cardID}`}
+                                                        className="w-full h-full object-cover object-top"
+                                                        />
+                                                    </div>
+                                                    ))}
+                                                </div>
+                                                <div className="absolute bottom-0 flex justify-between w-full bg-gradient-to-t from-black/70 to-transparent p-2">
+                                                    <span className="ml-3 text-white text-xl font-semibold">{deck.title}</span>
+                                                    <span className="mr-3 text-gray-50 opacity-70 text-xl font-medium">{deck.format}</span>
+                                                </div>
+                                                </a>
+                                            );
+                                        })}
+                                </div>
+                            </>
+                        ) : (null)}
+                        <CreateDeckModal
+                            isOpen={isCreateDeckOpen}
+                            onClose={() => setIsCreateDeckOpen(false)}
+                            onApply={handleCreateDeck}
+                        />
                     </div>
                 )}
             </div>

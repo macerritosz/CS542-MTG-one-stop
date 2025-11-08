@@ -41,7 +41,7 @@ export default function DeckDetail() {
                 <div 
                     className="mt-20 px-50 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 justify--items-center gap-6 "
                 >
-                    {cards.length > 0 ? (
+                    {cards && cards.length > 0 ? (
                         cards.map((card) => (
                             <div key={card.cardID} 
                                 className="relative group w-full transition-transform duration-200"
