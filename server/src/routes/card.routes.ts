@@ -197,7 +197,7 @@ router.get("/cardnames", async (req, res) => {
     if (!query) return res.status(200).json({ cards: [] });
     
     const [cards]: any = await pool.query(
-      "SELECT DISTINCT name FROM Card WHERE name LIKE ? ORDER BY name LIMIT 4",
+      "SELECT MIN(cardID) as cardID, name FROM Card WHERE name LIKE ? GROUP BY name ORDER BY name LIMIT 4",
       [`%${query}%`]
     );
 

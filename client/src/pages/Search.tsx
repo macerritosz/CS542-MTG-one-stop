@@ -20,7 +20,7 @@ export default function Search() {
 
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
-        if (!formData.query.trim()) return;
+        if (formData.type === 'cards' && !formData.query.trim()) return;
         navigate(`/${formData.type}?query=${encodeURIComponent(formData.query)}&page=1`);
     }
 

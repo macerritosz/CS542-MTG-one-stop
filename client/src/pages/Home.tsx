@@ -49,7 +49,6 @@ export default function Home() {
         }
     }, [location]);
 
-
     useEffect(() => {
         const sections = [
             { ref: aboutRef },
@@ -113,7 +112,7 @@ export default function Home() {
 
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
-        if (!formData.query.trim()) return;
+        if (formData.type === 'cards' && !formData.query.trim()) return;
         navigate(`/${formData.type}?query=${encodeURIComponent(formData.query)}&page=1`);
     }
 

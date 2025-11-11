@@ -57,7 +57,7 @@ export default function CreateDeckModal({ isOpen, onClose, onApply }: CreateDeck
     
         setErrors({ title: '', format: '' });
         onApply(formData);
-        setFormData({ title: '', format: '', is_private: 'false', name: display_name });
+        setFormData({ title: '', format: '', is_private: 'true', name: display_name });
     }
     
     return (

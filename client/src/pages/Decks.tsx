@@ -10,6 +10,8 @@ interface Deck {
     title: string;
     format: string;
     cards: Card[];
+    display_name: string;
+    created_at: string;
 }
 
 interface Card {
@@ -34,21 +36,22 @@ export default function Decks() {
     useEffect(() => {
         const url_query = params.get("query")
         const url_page = parseInt(params.get("page") || "1", 10);
-
-        if (!url_query) return;
         
-        setQuery(url_query)
+        setQuery(url_query || '')
         setPage(url_page);
 
         async function fetchDecks() {
           try {
             let url = `http://localhost:5715/api/decks?query=${encodeURIComponent(url_query!)}&page=${url_page}`;
             if (selected === "My Decks") url += `&name=${encodeURIComponent(display_name!)}`;
-            
             const res = await fetch(url);
             const data = await res.json();
+            
+            const filteredDecks = selected === "Saved Decks" 
+                ? data.decks.filter((deck: any) => savedDecks.includes(deck.deckID))
+                : data.decks;
 
-            setDecks(data.decks);
+            setDecks(filteredDecks);
             setTotalPages(data.totalPages || 1);
 
           } catch (err) {
@@ -73,9 +76,9 @@ export default function Decks() {
           try {
             const res = await fetch(`http://localhost:5715/api/saveddecks?name=${encodeURIComponent(display_name!)}`);
             const data = await res.json();
-            console.log(data)
             if (res.ok && Array.isArray(data.savedDecks)) {
-              setSavedDecks(data.savedDecks.map((d: any) => d.deckID));
+                console.log(data.savedDecks.map((d: any) => d.deckID))
+                setSavedDecks(data.savedDecks.map((d: any) => d.deckID));
             }
           } catch (err) {
             console.error("Failed to fetch saved decks:", err);
@@ -84,7 +87,6 @@ export default function Decks() {
         fetchSavedDecks();
     }, [isAuthenticated, display_name]);
     
-
     async function handleCreateDeck(deckData: any) {
         try {
             const res = await fetch("http://localhost:5715/api/decks", {
@@ -128,7 +130,6 @@ export default function Decks() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({deckID, name: display_name}),
             });
-            const data = await res.json();
     
             if (res.ok) {
                 console.log("Deck unsaved!");
@@ -139,14 +140,40 @@ export default function Decks() {
         }
     }
 
+    function timeAgo(dateString: string) {
+        const now = new Date();
+        const date = new Date(dateString);
+        const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+      
+        const intervals = [
+          { label: "year", seconds: 31536000 },
+          { label: "month", seconds: 2592000 },
+          { label: "week", seconds: 604800 },
+          { label: "day", seconds: 86400 },
+          { label: "hour", seconds: 3600 },
+          { label: "minute", seconds: 60 },
+          { label: "second", seconds: 1 },
+        ];
+      
+        for (const interval of intervals) {
+          const count = Math.floor(seconds / interval.seconds);
+          if (count >= 1) {
+            return `${count} ${interval.label}${count > 1 ? "s" : ""} ago`;
+          }
+        }
+      
+        return "just now";
+      }
+
+      
     function toggleSave(deckID: number) {
-    if (savedDecks.includes(deckID)) {
-        handleRemoveSaveDeck(deckID.toString());
-        setSavedDecks(savedDecks.filter(id => id !== deckID));
-    } else {
-        handleSaveDeck(deckID.toString());
-        setSavedDecks([...savedDecks, deckID]);
-    }
+        if (savedDecks.includes(deckID)) {
+            handleRemoveSaveDeck(deckID.toString());
+            setSavedDecks(savedDecks.filter(id => id !== deckID));
+        } else {
+            handleSaveDeck(deckID.toString());
+            setSavedDecks([...savedDecks, deckID]);
+        }
     }
     
     function changePage(newPage: number) {
@@ -160,7 +187,6 @@ export default function Decks() {
 
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
-        if (!query.trim()) return;
         navigate(`/decks?query=${encodeURIComponent(query)}`);
     }
     
@@ -210,6 +236,18 @@ export default function Decks() {
                                             >
                                             My Decks
                                         </button>
+                                        
+                                        <button
+                                            type="button"
+                                            className={`px-5 py-2 text-gray-800 rounded-3xl whitespace-nowrap ${
+                                                selected == 'Saved Decks' 
+                                                ? 'bg-gray-400 text-white' 
+                                                : 'bg-none hover:cursor-pointer'
+                                            }`}
+                                            onClick={() => setSelected('Saved Decks')}
+                                            >
+                                            Saved
+                                        </button>
                                     </>
                                 )}
                             </div>
@@ -237,22 +275,24 @@ export default function Decks() {
                                     href={`/decks/${deck.deckID}`}
                                     className="relative group block rounded-xl overflow-hidden shadow-lg hover:scale-105 transition-transform duration-300"
                                     >
-                                    <button
-                                        type="button"
-                                        onClick={(e) => {
-                                        e.preventDefault();
-                                        toggleSave(deck.deckID);
-                                        }}
-                                        className="absolute top-3 right-3 z-20"
-                                    >
-                                        <Heart
-                                        className={`w-10 h-10 transition-all duration-200 ${
-                                            savedDecks.includes(deck.deckID)
-                                            ? "fill-red-500 text-red-500"
-                                            : "text-red-500 hover:fill-red/40"
-                                        }`}
-                                        />
-                                    </button>
+                                    {display_name?.toLowerCase() !== deck.display_name.toLowerCase() && (
+                                        <button
+                                            type="button"
+                                            onClick={(e) => {
+                                            e.preventDefault();
+                                            toggleSave(deck.deckID);
+                                            }}
+                                            className="absolute top-3 right-3 z-20"
+                                        >
+                                            <Heart
+                                            className={`w-10 h-10 transition-all duration-200 ${
+                                                savedDecks.includes(deck.deckID)
+                                                ? "fill-red-500 text-red-500"
+                                                : "text-red-500 hover:fill-red/40"
+                                            }`}
+                                            />
+                                        </button>
+                                    )}
                                   <div className="grid grid-cols-2 grid-rows-2 w-full aspect-[4/3]">
                                     {deck.cards.map((card) => (
                                       <div key={card.cardID} className="overflow-hidden relative">
@@ -265,8 +305,12 @@ export default function Decks() {
                                     ))}
                                   </div>
                                   <div className="absolute bottom-0 flex justify-between w-full bg-gradient-to-t from-black/70 to-transparent p-2">
-                                    <span className="ml-3 text-white text-xl font-semibold">{deck.title}</span>
-                                    <span className="mr-3 text-gray-50 opacity-70 text-xl font-medium">{deck.format}</span>
+                                    <span className="ml-2 text-white text-xl font-semibold">{deck.title}</span>
+                                    <span className="mr-2 text-gray-50 opacity-70 text-xl font-medium">{deck.format}</span>
+                                    <span className="mr-2 text-gray-50 opacity-70 text-xl font-medium">{deck.display_name}</span>
+                                  </div>
+                                  <div className="absolute top-2 flex justify-between w-full p-2">
+                                    <span className="ml-2 text-white text-xl font-semibold">{timeAgo(deck.created_at)}</span>
                                   </div>
                                 </a>
                               );
@@ -323,5 +367,9 @@ TODO-
 - combs cards are in
 - when hover over card pans out to left or right some info about the card
 - when hover over deck pans out to left or right a list of first 30 cards or so, name
+- add saving decks in profile page
+- wiki page
+
+- price if decks   
 
 */

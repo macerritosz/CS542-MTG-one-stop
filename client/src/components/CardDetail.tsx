@@ -70,8 +70,8 @@ export default function CardInfo(){
     const [currentPrintIndex, setCurrentPrintIndex] = useState(0);
     const [showDeckDropdown, setShowDeckDropdown] = useState(false);
     const [userDecks, setUserDecks] = useState<Deck[]>([]);
+    const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
     const { display_name } = useAuth();
-
 
     const colors: Record<string, string> = {
         '{W}': 'https://svgs.scryfall.io/card-symbols/W.svg',
@@ -233,11 +233,18 @@ export default function CardInfo(){
           });
           
           if (res.ok) {
-            console.log('Card added successfully');
+            const deck = userDecks.find(d => d.deckID === deckID);
+            setMessage({ 
+              text: `Added ${card?.name} to ${deck?.title}`, 
+              type: 'success' 
+            });
+            setTimeout(() => setMessage(null), 3000);
             setShowDeckDropdown(false);
           }
         } catch (err) {
           console.error("Failed to add card to deck:", err);
+          setMessage({ text: 'Failed to add card to deck', type: 'error' });
+          setTimeout(() => setMessage(null), 3000);
         }
     }
 
@@ -264,10 +271,8 @@ export default function CardInfo(){
         const nextIndex = (currentPrintIndex + 1) % alternatePrints.length;
         const nextCard = alternatePrints[nextIndex];
         if (nextCard) navigate(`/cards/${nextCard.cardID}`);
-        
     }
 
-    
     function handleChange(e: React.ChangeEvent<HTMLInputElement>){
         setQuery(e.target.value);
     }
@@ -308,9 +313,15 @@ export default function CardInfo(){
         <div className="min-h-screen bg-gray-100/10 pb-20">
             {card && (
                 <>
-                    <div className="max-w-[1400px] mx-auto mt-20 flex gap-10 justify-center">
+                    <div className="max-w-[1400px] mx-auto mt-12 flex gap-10 justify-center">
                         <div className="sticky top-20 h-fit self-start flex-shrink-0 flex flex-col items-center">
-            
+                            <div className={`w-[380px] mb-3 px-4 py-1 rounded-lg text-center font-medium transition-opacity duration-200 truncate ${
+                                message 
+                                    ? (message.type === 'success' ? 'bg-green-100 text-green-700 opacity-100' : 'bg-red-100 text-red-700 opacity-100')
+                                    : 'bg-gray-100 text-transparent opacity-0'
+                            }`}>
+                                {message ? message.text : 'placeholder'}
+                            </div>
                             <form onSubmit={handleSubmit} className="relative w-max mb-4 z-50 flex gap-5 justify-start items-center">
                                 <div className="relative w-80">
                                     <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 z-10" />
@@ -376,10 +387,10 @@ export default function CardInfo(){
                             <img
                                 src={card.image_uris}
                                 alt={`Card ${card.cardID}`}
-                                className="w-[380px] h-auto object-cover rounded-2xl shadow-md"
+                                className="w-[380px] h-auto object-cover rounded-2xl shadow-lg"
                                 onClick={handleImageClick}
                             />
-                            <div className="flex flex-col items-center gap-3 w-[275px] mt-8">
+                            <div className="flex flex-col items-center gap-3 w-[275px] mt-5">
                                 <a
                                     href={card.purchase_uris}
                                     target="_blank"
@@ -401,7 +412,7 @@ export default function CardInfo(){
                                 </a>
                             </div>
                         </div>
-                        <div className="flex-1 min-w-0 max-w-3xl max-h-[80vh] overflow-y-scroll [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                        <div className="mt-10 flex-1 min-w-0 max-w-3xl max-h-[80vh] overflow-y-scroll [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                             <div className='flex flex-col items-center'>
                                 <div className='flex flex-wrap gap-6 items-center justify-center'>
                                     <h1 className='text-4xl font-semibold text-gray-600'>{card.name}</h1>

@@ -43,7 +43,7 @@ export default function Profile() {
     const initial = display_name ? display_name[0]!.toUpperCase() : 'U';
     const [decksbuilt, setDecksBuilt] = useState<Deck[] | null>(null);
     const [deckssaved, setDecksSaved] = useState<Deck[] | null>(null);
-    
+   
     const quotes = [
         "The spark of a Planeswalker ignites the multiverse.",
         "In the gathering, all paths converge.",
@@ -239,7 +239,7 @@ export default function Profile() {
                                 {loading ? "Loading..." : (events.length > 0 ? "Refresh Data" : "Get Event Data")}
                             </button>
                         </div>
-                        <div className="grid lg:grid-cols-4 gap-3">
+                        <div className="grid lg:grid-cols-4 gap-3 px-[6%]">
                             {events.map((event, index) => (
                                 <div 
                                     key={index} 
@@ -333,7 +333,7 @@ export default function Profile() {
                                         Saved Decks ({deckssaved.length})
                                     </h2>
                                 </div>
-                                <div className="grid lg:grid-cols-4 gap-3 px-[6%]">
+                                <div className="grid lg:grid-cols-4 gap-3 px-[6%] mb-30">
                                         {deckssaved.map((deck) => {
                                             return (
                                                 <a
