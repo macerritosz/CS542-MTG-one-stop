@@ -39,6 +39,14 @@ export default function DeckDetail() {
         'Colorless': 'https://svgs.scryfall.io/card-symbols/C.svg',
     }
 
+    const basicLandIds: Record<string, string> = {
+        'White': '37edc4b5-75f5-4b43-a57e-a8192565a2a0',
+        'Blue': '17e2b637-72b1-4457-aaba-66d51107be4c',
+        'Black': '13505c15-14e0-4200-82bd-fb9bce949e68',
+        'Red': '042b04b4-f7f4-4c1a-86ad-b50d788aa99e',
+        'Green': '117ab60a-b888-4585-b0c6-769d387069f7'
+    }
+
     async function fetchCards() {
         if (!deckID) return;
         try {
@@ -91,15 +99,12 @@ export default function DeckDetail() {
             if (res.ok) {
                 setIsPrivate(0)
                 setMessage({ text: data.message, type: 'success' });
-                setTimeout(() => setMessage(null), 3000);
-            } else {
-                setMessage({ text: data.message, type: 'error' });
-                setTimeout(() => setMessage(null), 3000);
+                setTimeout(() => setMessage(null), 1000);
             }
         } catch (err) {
             console.error("Failed to publish deck:", err);
             setMessage({ text: 'Failed to publish deck', type: 'error' });
-            setTimeout(() => setMessage(null), 3000);
+            setTimeout(() => setMessage(null), 1000);
         }
     }
 
@@ -114,13 +119,13 @@ export default function DeckDetail() {
             if (res.ok) {
                 setIsPrivate(1)
                 setMessage({ text: 'Deck unpublished successfully!', type: 'success' });
-                setTimeout(() => setMessage(null), 3000);
+                setTimeout(() => setMessage(null), 1000);
             }
             console.log(data.message)
         } catch (err) {
             console.error("Failed to unpublish deck:", err);
             setMessage({ text: 'Failed to unpublish deck', type: 'error' });
-            setTimeout(() => setMessage(null), 3000);
+            setTimeout(() => setMessage(null), 1000);
         }
     }
 
@@ -135,13 +140,12 @@ export default function DeckDetail() {
             if (res.ok) {
                 await fetchCards();
                 setMessage({ text: `${cardName} removed from ${title} successfully!`, type: 'success' });
-                setTimeout(() => setMessage(null), 3000);
+                setTimeout(() => setMessage(null), 1000);
             }
-            console.log(data.message)
         } catch (err) {
             console.error("Failed to remove card from deck:", err);
             setMessage({ text: 'Failed to remove card from deck', type: 'error' });
-            setTimeout(() => setMessage(null), 3000);
+            setTimeout(() => setMessage(null), 1000);
         }
     }
 
@@ -161,7 +165,7 @@ export default function DeckDetail() {
         } catch (err) {
             console.error("Failed to delete deck: ", err);
             setMessage({ text: 'Failed to delete deck', type: 'error' });
-            setTimeout(() => setMessage(null), 3000);
+            setTimeout(() => setMessage(null), 1000);
         }
     }
 
@@ -193,18 +197,14 @@ export default function DeckDetail() {
             await fetchCards();
             console.log(`${name} added successfully`);
             setMessage({ text: `${name} added to deck`, type: 'success' });
-            setTimeout(() => setMessage(null), 3000);
+            setTimeout(() => setMessage(null), 1000);
             setQuery("");
             setSuggestions([]);
-        } else {
-            console.error("Failed to add card:", await res.text());
-            setMessage({ text: 'Failed to add card', type: 'error' });
-            setTimeout(() => setMessage(null), 3000);
         }
         } catch (err) {
-          console.error("Error adding card:", err);
+            console.error("Error adding card:", err);
         }
-      }
+    }
 
       async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
@@ -214,7 +214,7 @@ export default function DeckDetail() {
 
     return(
         <div className="min-h-screen bg-gray-100/10 pb-20">
-            <div className="max-w-[1400px] mx-auto ml-37 mt-12 flex gap-15 justify-center">
+            <div className="mx-auto ml-37 mt-12 flex gap-15 justify-center">
                 <div className="sticky top-20 h-fit self-start flex-shrink-0 flex flex-col items-center">
                     {display_name?.toLowerCase() === builderName?.toLowerCase() ? (
                         <>
@@ -305,7 +305,7 @@ export default function DeckDetail() {
                 } 
                 
                 </div>
-                <div className="mt-10 flex-1 max-w-4xl max-h-[80vh] overflow-y-scroll [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                <div className="mt-12 flex-1 max-w-4xl max-h-[80vh] overflow-y-scroll [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                     <div className='flex flex-col items-center px-6'>
                         <h1 className='text-4xl font-semibold text-gray-600 mb-2'>{title}</h1>
                         <div className="text-lg text-gray-400 font-medium mb-6">
@@ -314,7 +314,7 @@ export default function DeckDetail() {
                         {cards && cards.length > 0 ? (
                             <>
                                 <span className='font-semibold text-gray-600 mb-2'>{`Cards: (${cards.reduce((total, c) => total + c.quantity, 0)})`}</span>
-                                <div className="grid grid-cols-3 gap-x-1 gap-y-1 w-full mt-4">
+                                <div className="grid grid-cols-3 gap-x-1 gap-y-1 w-full mt-2">
                                     {cards.map((card) => (
                                     <span
                                         key={card.cardID}
@@ -345,7 +345,45 @@ export default function DeckDetail() {
                                 </div>
                             </>
                         ) : (null)}
-                        <div className="flex items-center justify-center gap-12 mb-7 mt-15">
+                        {display_name?.toLowerCase() === builderName?.toLowerCase() && (
+                            <>
+                                <h1 className='text-gray-700 font-medium mb-2 mt-7'>Add basic land:</h1>
+                                <div className="flex items-center gap-1.5">
+                                    {Object.entries(basicLandIds).map(([colorName, cardID]) => (
+                                        <img
+                                            key={colorName}
+                                            src={colors[colorName]}
+                                            alt={`Add ${colorName} basic land`}
+                                            title={`Add ${colorName} basic land`}
+                                            className="w-6 h-6 cursor-pointer hover:scale-110 transition-transform duration-150 opacity-70 hover:opacity-100"
+                                            onClick={async () => {
+                                                const landName = colorName === 'White' ? 'Plains' : 
+                                                                colorName === 'Blue' ? 'Island' : 
+                                                                colorName === 'Black' ? 'Swamp' : 
+                                                                colorName === 'Red' ? 'Mountain' : 'Forest';
+                                                try {
+                                                    const res = await fetch("http://localhost:5715/api/decks/card", {
+                                                        method: "POST",
+                                                        headers: { "Content-Type": "application/json" },
+                                                        body: JSON.stringify({ cardID, deckID, quantity: 1 }),
+                                                    });
+                                                    if (res.ok) {
+                                                        await fetchCards();
+                                                        setMessage({ text: `${landName} added to deck`, type: 'success' });
+                                                        setTimeout(() => setMessage(null), 1000);
+                                                    }
+                                                } catch (err) {
+                                                    console.error("Error adding basic land:", err);
+                                                    setMessage({ text: 'Failed to add card', type: 'error' });
+                                                    setTimeout(() => setMessage(null), 1000);
+                                                }
+                                            }}
+                                        />
+                                    ))}
+                                </div>
+                            </>
+                        )}
+                        <div className="flex items-center justify-center gap-12 mb-7 mt-10">
                             {colorDistribution.map((color: any) => (
                                 <div key={color.colorName} className="flex flex-col items-center gap-2">
                                     <img 

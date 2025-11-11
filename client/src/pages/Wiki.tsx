@@ -1,3 +1,5 @@
+import picture from '../assets/wiki_image.png'
+
 export default function Wiki() {
     return (
         <div className="flex flex-col items-center justify-center h-screen bg-blue-300"> 

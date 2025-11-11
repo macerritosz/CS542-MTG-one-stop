@@ -1,4 +1,3 @@
-import { FaSearch } from 'react-icons/fa'; 
 import { useAuth } from '../contexts/AuthContext';
 
 export default function Navbar() {
@@ -27,9 +26,11 @@ export default function Navbar() {
             <a href="/wiki" className="text-gray-700 hover:text-blue-400 text-lg font-medium transition-colors">
               Wiki
             </a>
-            <a href="/Profile" className="text-gray-700 hover:text-blue-400 text-lg font-medium transition-colors">
-              Profile
-            </a>
+            {isAuthenticated && (
+              <a href="/Profile" className="text-gray-700 hover:text-blue-400 text-lg font-medium transition-colors">
+                Profile
+              </a>
+            )}
           
           <div className="flex items-center justify-center space-x-6">
             {!isAuthenticated && ( 

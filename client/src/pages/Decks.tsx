@@ -353,23 +353,18 @@ export default function Decks() {
 /*
 
 TODO- 
-- deck needs a certain amount of cards to publish
-
 - i dont think we need colors to card
 
 - trigger idea- amount of decks this card is in - derived value for card 
-- trigger idea- delete quantity- when player inserts card thats already in deck it just increments quanitty by one
 - trigger idea- inserting random color design for player when created
 - trigger idea- incrementing popularity count of both cards when used in a deck or when deck is saved by user
-    -- popular decks and cards on profile
+    - popular decks and cards on profile
 
 - card combos implemented
-- combs cards are in
 - when hover over card pans out to left or right some info about the card
 - when hover over deck pans out to left or right a list of first 30 cards or so, name
 - add saving decks in profile page
 - wiki page
 
-- price if decks   
-
+- price of decks
 */
