@@ -275,7 +275,7 @@ export default function Decks() {
                                     href={`/decks/${deck.deckID}`}
                                     className="relative group block rounded-xl overflow-hidden shadow-lg hover:scale-105 transition-transform duration-300"
                                     >
-                                    {display_name?.toLowerCase() !== deck.display_name.toLowerCase() && (
+                                    {display_name?.toLowerCase() !== deck.display_name.toLowerCase() && isAuthenticated && (
                                         <button
                                             type="button"
                                             onClick={(e) => {
@@ -364,7 +364,6 @@ TODO-
 - when hover over card pans out to left or right some info about the card
 - when hover over deck pans out to left or right a list of first 30 cards or so, name
 - add saving decks in profile page
-- wiki page
 
 - price of decks
 */
