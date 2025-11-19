@@ -101,6 +101,10 @@ export default function DeckDetail() {
                 setMessage({ text: data.message, type: 'success' });
                 setTimeout(() => setMessage(null), 1000);
             }
+            if (!res.ok) {
+                setMessage({ text: data.message, type: 'error' });
+                setTimeout(() => setMessage(null), 1000);
+            }
         } catch (err) {
             console.error("Failed to publish deck:", err);
             setMessage({ text: 'Failed to publish deck', type: 'error' });
@@ -121,7 +125,10 @@ export default function DeckDetail() {
                 setMessage({ text: 'Deck unpublished successfully!', type: 'success' });
                 setTimeout(() => setMessage(null), 1000);
             }
-            console.log(data.message)
+            if (!res.ok) {
+                setMessage({ text: 'Deck had error while unpublishing', type: 'error' });
+                setTimeout(() => setMessage(null), 1000);
+            }
         } catch (err) {
             console.error("Failed to unpublish deck:", err);
             setMessage({ text: 'Failed to unpublish deck', type: 'error' });
@@ -140,6 +147,10 @@ export default function DeckDetail() {
             if (res.ok) {
                 await fetchCards();
                 setMessage({ text: `${cardName} removed from ${title} successfully!`, type: 'success' });
+                setTimeout(() => setMessage(null), 1000);
+            }
+            if (!res.ok) {
+                setMessage({ text: 'Failed to remove card from deck', type: 'error' });
                 setTimeout(() => setMessage(null), 1000);
             }
         } catch (err) {
@@ -161,6 +172,10 @@ export default function DeckDetail() {
             });
             if (res.ok) {
                 navigate('../')
+            }
+            if (!res.ok) {
+                setMessage({ text: 'Failed to delete deck', type: 'error' });
+                setTimeout(() => setMessage(null), 1000);
             }
         } catch (err) {
             console.error("Failed to delete deck: ", err);

@@ -71,7 +71,7 @@ export default function CardInfo(){
     const [showDeckDropdown, setShowDeckDropdown] = useState(false);
     const [userDecks, setUserDecks] = useState<Deck[]>([]);
     const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
-    const { display_name } = useAuth();
+    const { display_name, isAuthenticated } = useAuth();
 
     const colors: Record<string, string> = {
         '{W}': 'https://svgs.scryfall.io/card-symbols/W.svg',
@@ -154,6 +154,7 @@ export default function CardInfo(){
             setKeywords(data.keywords)
             setProducedMana(data.produced_mana)
             setColorIdentity(data.color_identity)
+            console.log(data.card.edhrec_rank)
             
             const printsRes = await fetch(`http://localhost:5715/api/cardssimple?query=${encodeURIComponent(data.card.name)}`);
             const printsData = await printsRes.json();
@@ -323,7 +324,7 @@ export default function CardInfo(){
                                 {message ? message.text : 'placeholder'}
                             </div>
                             <form onSubmit={handleSubmit} className="relative w-max mb-4 z-50 flex gap-5 justify-start items-center">
-                                <div className="relative w-80">
+                                <div className={`relative ${isAuthenticated ? 'w-80' : 'w-[380px]'}`}>
                                     <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 z-10" />
                                     <input
                                         className="pl-10 border border-gray-400 rounded-lg px-4 py-2 w-full text-black bg-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-gray-500"
@@ -351,37 +352,39 @@ export default function CardInfo(){
                                         </ul>
                                     )}
                                 </div>
-                                <div className="relative deck-dropdown-container">
-                                    <button
-                                        onClick={() => setShowDeckDropdown(!showDeckDropdown)}
-                                        className="px-3 py-2 border border-purple-400 rounded-lg text-purple-500 hover:cursor-pointer focus:outline-none focus:ring-1 focus:ring-purple-500 flex items-center gap-2"
-                                    >
-                                        <Plus className="w-4 h-4" />
-                                        Add to Deck
-                                        <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${showDeckDropdown ? 'rotate-180' : ''}`} />
-                                    </button>
+                                {isAuthenticated && (
+                                    <div className="relative deck-dropdown-container">
+                                        <button
+                                            onClick={() => setShowDeckDropdown(!showDeckDropdown)}
+                                            className="px-3 py-2 border border-purple-400 rounded-lg text-purple-500 hover:cursor-pointer focus:outline-none focus:ring-1 focus:ring-purple-500 flex items-center gap-2"
+                                        >
+                                            <Plus className="w-4 h-4" />
+                                            Add to Deck
+                                            <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${showDeckDropdown ? 'rotate-180' : ''}`} />
+                                        </button>
 
-                                    {showDeckDropdown && (
-                                        <div className="absolute top-full left-0 mt-2 bg-white border border-gray-300 rounded-lg shadow-xl z-50 w-full max-h-[300px] overflow-y-auto">
-                                        {userDecks.length > 0 ? (
-                                            userDecks.map((deck) => (
-                                            <button
-                                                key={deck.deckID}
-                                                onClick={() => addCardToDeck(deck.deckID)}
-                                                className="w-full text-left px-3 py-2 hover:bg-purple-100 transition-colors border-b border-gray-100 last:border-b-0 flex flex-col gap-1"
-                                            >
-                                                <span className="text-gray-700 text-center">{deck.title}</span>
+                                        {showDeckDropdown && (
+                                            <div className="absolute top-full left-0 mt-2 bg-white border border-gray-300 rounded-lg shadow-xl z-50 w-full max-h-[300px] overflow-y-auto">
+                                            {userDecks.length > 0 ? (
+                                                userDecks.map((deck) => (
+                                                <button
+                                                    key={deck.deckID}
+                                                    onClick={() => addCardToDeck(deck.deckID)}
+                                                    className="w-full text-left px-3 py-2 hover:bg-purple-100 transition-colors border-b border-gray-100 last:border-b-0 flex flex-col gap-1"
+                                                >
+                                                    <span className="text-gray-700 text-center">{deck.title}</span>
 
-                                            </button>
-                                            ))
-                                        ) : (
-                                            <div className="px-5 py-4 text-gray-500 text-center">
-                                            No decks available
+                                                </button>
+                                                ))
+                                            ) : (
+                                                <div className="px-5 py-4 text-gray-500 text-center">
+                                                No decks available
+                                                </div>
+                                            )}
                                             </div>
                                         )}
-                                        </div>
-                                    )}
-                                </div>
+                                    </div>
+                                )}
                             </form>
 
                             <img
@@ -454,7 +457,7 @@ export default function CardInfo(){
                                         <span className='text-gray-700 capitalize'>{card.rarity}</span>
                                     </div>
                                     
-                                    {card.mv !== null && (
+                                    {card.mv !== null && card.mv !== 0 && (
                                         <div className='flex justify-between'>
                                             <span className='text-gray-500 font-medium'>Mana Value:</span>
                                             <span className='text-gray-700'>{card.mv}</span>
@@ -496,7 +499,7 @@ export default function CardInfo(){
                                         </div>
                                     )}
                                     
-                                    {card.edhrec_rank && (
+                                    {card.edhrec_rank !== null && card.loyalty !== 'None' && (
                                         <div className='flex justify-between'>
                                             <span className='text-gray-500 font-medium'>Rank:</span>
                                             <span className='text-gray-700'>#{card.edhrec_rank}</span>

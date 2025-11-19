@@ -6,7 +6,6 @@ import shopIcon from '../assets/shop.svg';
 import calendarIcon from '../assets/calendar.svg';
 import { useAuth } from '../contexts/AuthContext';
 import CreateDeckModal from '../components/CreateDeckModal';
-import { Edit } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface Event {
@@ -210,11 +209,8 @@ export default function Profile() {
                     </div>
                     <div className="flex flex-col">
                         <h1 className="text-7xl font-bold text-white">Welcome Back,</h1>
-                        <div className="flex items-center gap-4 mt-2">
+                        <div className="flex items-center mt-2">
                             <h1 className="text-7xl font-bold text-white">{display_name}</h1>
-                            <a href="/" className="ml-2 flex items-center">
-                                <Edit className="w-9 h-9 text-gray-600 hover:text-blue-500 cursor-pointer mt-4"/>
-                            </a>
                         </div>
                     </div>
                 </div>
@@ -223,154 +219,168 @@ export default function Profile() {
                 </p>
             </div>
             <div>
-                {events.length > 0 && (
-                    <div className="mt-16 flex flex-col items-center gap-y-4">
-                       <div className="flex items-start justify-center gap-10 mb-5">
-                            <h2 className="text-4xl font-bold text-blue text-center -mr-5">
-                                Upcoming Events ({events.length})
-                            </h2>
-                            <p className="text-4xl">•</p>
-                            <button 
-                                className="px-5 py-2 text-2xl text-blue rounded-xl border hover:bg-gray-500 hover:text-white active:bg-gray-700 -ml-5 
-                                    transform active:scale-95 transition-all duration-150 shadow-lg disabled:opacity-50 disabled:hover:bg-gray-700 disabled:active:scale-100 disabled:transform-none" 
-                                disabled={loading || !targetUrl}
-                                onClick={() => getEventData(targetUrl)} 
-                            >
-                                {loading ? "Loading..." : (events.length > 0 ? "Refresh Data" : "Get Event Data")}
-                            </button>
-                        </div>
-                        <div className="grid lg:grid-cols-4 gap-3 px-[6%]">
-                            {events.map((event, index) => (
-                                <div 
-                                    key={index} 
-                                    className="bg-white rounded-lg shadow-[0_4px_20px_rgba(0,0,0,0.3)] p-6 hover:shadow-[0_8px_30px_rgba(0,0,0,0.4)] transition"
+                <div className="mt-16 flex flex-col items-center gap-y-4">
+                    {events.length > 0 ? 
+                        <>
+                        <div className="flex items-start justify-center gap-10 mb-5">
+                                <h2 className="text-4xl font-bold text-blue text-center -mr-5">
+                                    Upcoming Events ({events.length})
+                                </h2>
+                                <p className="text-4xl">•</p>
+                                <button 
+                                    className="px-5 py-2 text-2xl text-blue rounded-xl border hover:bg-gray-500 hover:text-white active:bg-gray-700 -ml-5 
+                                        transform active:scale-95 transition-all duration-150 shadow-lg disabled:opacity-50 disabled:hover:bg-gray-700 disabled:active:scale-100 disabled:transform-none" 
+                                    disabled={loading || !targetUrl}
+                                    onClick={() => getEventData(targetUrl)} 
                                 >
-                                    <div className="flex justify-between items-start mb-3">
-                                        <div className="relative w-30 h-30">
-                                            <img src={calendarIcon} alt="Tags Icon" className="w-30 h-30" />
-                                            <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                                <div className="text-sm font-semibold mb-2 text-white">{event.month}</div>
-                                                <div className="text-3xl font-bold text-gray-800">{event.dayOfMonth}</div>
-                                                <div className="text-md text-gray-800">{event.dayOfWeek}</div>
+                                    {loading ? "Loading..." : (events.length > 0 ? "Refresh Data" : "Get Event Data")}
+                                </button>
+                            </div>
+                            <div className="grid lg:grid-cols-4 gap-3 px-[6%]">
+                                {events.map((event, index) => (
+                                    <div 
+                                        key={index} 
+                                        className="bg-white rounded-lg shadow-[0_4px_20px_rgba(0,0,0,0.3)] p-6 hover:shadow-[0_8px_30px_rgba(0,0,0,0.4)] transition"
+                                    >
+                                        <div className="flex justify-between items-start mb-3">
+                                            <div className="relative w-30 h-30">
+                                                <img src={calendarIcon} alt="Tags Icon" className="w-30 h-30" />
+                                                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                                    <div className="text-sm font-semibold mb-2 text-white">{event.month}</div>
+                                                    <div className="text-3xl font-bold text-gray-800">{event.dayOfMonth}</div>
+                                                    <div className="text-md text-gray-800">{event.dayOfWeek}</div>
+                                                </div>
                                             </div>
-                                        </div>
-                                        <span className="text-gray-600 text-lg font-bold px-2 py-1">
-                                            {event.eventDistance}
-                                        </span>
-                                    </div>
-                                    
-                                    <h3 className="text-xl font-bold text-gray-800 mb-2">
-                                        {event.eventName}
-                                    </h3>
-                                    
-                                    <div className="flex items-center text-gray-600 mb-2 font-semibold">
-                                        <img src={shopIcon} alt="Tags Icon" className="w-6 h-6 mr-2" />
-                                        <span> {event.orgName} </span>
-                                    </div>
-                                    
-                                    <div className="flex items-center text-gray-700 mb-2">
-                                        <img src={clockIcon} alt="Tags Icon" className="w-6 h-6 mr-2" />
-                                        <span>{event.eventTime}</span>
-                                    </div>
-                                    
-                                    {event.eventTags && (
-                                        <div className="flex items-center flex-wrap gap-2">
-                                            <img src={tagIcon} alt="Tags Icon" className="w-6 h-6" />
-                                            <span className="text-gray-700 text-sm">
-                                                {event.eventTags.split(',').map(tag => tag.trim()).join(', ')}
+                                            <span className="text-gray-600 text-lg font-bold px-2 py-1">
+                                                {event.eventDistance}
                                             </span>
                                         </div>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-                        {decksbuilt && decksbuilt.length > 0 ? (
-                            <>
-                                <div className="flex items-start justify-center gap-10 mb-5 mt-16">
-                                    <h2 className="text-4xl font-bold text-blue text-center -mr-5">
-                                        Your Decks ({decksbuilt.length})
-                                    </h2>
-                                    <p className="text-4xl">•</p>
-                                    <button type="button" onClick={() => setIsCreateDeckOpen(true)} className='px-5 py-2 text-2xl hover:text-white text-blue rounded-xl border hover:bg-gray-500 active:bg-gray-700 -ml-5 
-                                            transform active:scale-95 transition-all duration-150 shadow-lg'>
-                                        Create Deck
-                                    </button>
-                                </div>
-                                <div className="grid lg:grid-cols-4 gap-3 px-[6%]">
-                                        {decksbuilt.map((deck) => {
-                                            return (
-                                                <a
-                                                key={deck.deckID}
-                                                href={`/decks/${deck.deckID}`}
-                                                className="relative group block rounded-xl overflow-hidden shadow-lg hover:scale-105 transition-transform duration-300"
-                                                >
-                                                <div className="grid grid-cols-2 grid-rows-2 w-full aspect-[4/3]">
-                                                    {deck.cards.map((card) => (
-                                                    <div key={card.cardID} className="overflow-hidden relative">
-                                                        <img
-                                                        src={card.image_uris}
-                                                        alt={`Card ${card.cardID}`}
-                                                        className="w-full h-full object-cover object-top"
-                                                        />
-                                                    </div>
-                                                    ))}
+                                        
+                                        <h3 className="text-xl font-bold text-gray-800 mb-2">
+                                            {event.eventName}
+                                        </h3>
+                                        
+                                        <div className="flex items-center text-gray-600 mb-2 font-semibold">
+                                            <img src={shopIcon} alt="Tags Icon" className="w-6 h-6 mr-2" />
+                                            <span> {event.orgName} </span>
+                                        </div>
+                                        
+                                        <div className="flex items-center text-gray-700 mb-2">
+                                            <img src={clockIcon} alt="Tags Icon" className="w-6 h-6 mr-2" />
+                                            <span>{event.eventTime}</span>
+                                        </div>
+                                        
+                                        {event.eventTags && (
+                                            <div className="flex items-center flex-wrap gap-2">
+                                                <img src={tagIcon} alt="Tags Icon" className="w-6 h-6" />
+                                                <span className="text-gray-700 text-sm">
+                                                    {event.eventTags.split(',').map(tag => tag.trim()).join(', ')}
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </>
+                    : 
+                        <button 
+                            className="px-5 py-2 text-2xl text-blue rounded-xl border hover:bg-gray-500 hover:text-white active:bg-gray-700 -ml-5 
+                                transform active:scale-95 transition-all duration-150 shadow-lg disabled:opacity-50 disabled:hover:bg-gray-700 disabled:active:scale-100 disabled:transform-none" 
+                            disabled={loading || !targetUrl}
+                            onClick={() => getEventData(targetUrl)} 
+                        >
+                            {loading ? "Loading..." : (events.length > 0 ? "Refresh Data" : "Get Event Data")}
+                        </button> 
+                    }
+                    {decksbuilt && decksbuilt.length > 0 ? (
+                        <>
+                            <div className="flex items-start justify-center gap-10 mb-5 mt-16">
+                                <h2 className="text-4xl font-bold text-blue text-center -mr-5">
+                                    Your Decks ({decksbuilt.length})
+                                </h2>
+                                <p className="text-4xl">•</p>
+                                <button type="button" onClick={() => setIsCreateDeckOpen(true)} className='px-5 py-2 text-2xl hover:text-white text-blue rounded-xl border hover:bg-gray-500 active:bg-gray-700 -ml-5 
+                                        transform active:scale-95 transition-all duration-150 shadow-lg'>
+                                    Create Deck
+                                </button>
+                            </div>
+                            <div className="grid lg:grid-cols-4 gap-3 px-[6%]">
+                                    {decksbuilt.map((deck) => {
+                                        return (
+                                            <a
+                                            key={deck.deckID}
+                                            href={`/decks/${deck.deckID}`}
+                                            className="relative group block rounded-xl overflow-hidden shadow-lg hover:scale-105 transition-transform duration-300"
+                                            >
+                                            <div className="grid grid-cols-2 grid-rows-2 w-full aspect-[4/3]">
+                                                {deck.cards.map((card) => (
+                                                <div key={card.cardID} className="overflow-hidden relative">
+                                                    <img
+                                                    src={card.image_uris}
+                                                    alt={`Card ${card.cardID}`}
+                                                    className="w-full h-full object-cover object-top"
+                                                    />
                                                 </div>
-                                                <div className="absolute bottom-0 flex justify-between w-full bg-gradient-to-t from-black/70 to-transparent p-2">
-                                                    <span className="ml-3 text-white text-xl font-semibold">{deck.title}</span>
-                                                    <span className="mr-3 text-gray-50 opacity-70 text-xl font-medium">{deck.format}</span>
-                                                </div>
-                                                </a>
-                                            );
-                                        })}
-                                </div>
-                            </>
-                        ) : (null)}
+                                                ))}
+                                            </div>
+                                            <div className="absolute bottom-0 flex justify-between w-full bg-gradient-to-t from-black/70 to-transparent p-2">
+                                                <span className="ml-3 text-white text-xl font-semibold">{deck.title}</span>
+                                                <span className="mr-3 text-gray-50 opacity-70 text-xl font-medium">{deck.format}</span>
+                                            </div>
+                                            </a>
+                                        );
+                                    })}
+                            </div>
+                        </>
+                    ) : (
+                        <div className="py-10"></div>
+                    )}
 
-                        {deckssaved && deckssaved.length > 0 ? (
-                            <>
-                                <div className="flex items-start justify-center gap-10 mb-5 mt-16">
-                                    <h2 className="text-4xl font-bold text-blue text-center -mr-5">
-                                        Saved Decks ({deckssaved.length})
-                                    </h2>
-                                </div>
-                                <div className="grid lg:grid-cols-4 gap-3 px-[6%] mb-30">
-                                        {deckssaved.map((deck) => {
-                                            return (
-                                                <a
-                                                key={deck.deckID}
-                                                href={`/decks/${deck.deckID}`}
-                                                className="relative group block rounded-xl overflow-hidden shadow-lg hover:scale-105 transition-transform duration-300"
-                                                >
-                                                <div className="grid grid-cols-2 grid-rows-2 w-full aspect-[4/3]">
-                                                    {deck.cards.map((card) => (
-                                                    <div key={card.cardID} className="overflow-hidden relative">
-                                                        <img
-                                                        src={card.image_uris}
-                                                        alt={`Card ${card.cardID}`}
-                                                        className="w-full h-full object-cover object-top"
-                                                        />
-                                                    </div>
-                                                    ))}
+                    {deckssaved && deckssaved.length > 0 ? (
+                        <>
+                            <div className="flex items-start justify-center gap-10 mb-5 mt-16">
+                                <h2 className="text-4xl font-bold text-blue text-center -mr-5">
+                                    Saved Decks ({deckssaved.length})
+                                </h2>
+                            </div>
+                            <div className="grid lg:grid-cols-4 gap-3 px-[6%] mb-30">
+                                    {deckssaved.map((deck) => {
+                                        return (
+                                            <a
+                                            key={deck.deckID}
+                                            href={`/decks/${deck.deckID}`}
+                                            className="relative group block rounded-xl overflow-hidden shadow-lg hover:scale-105 transition-transform duration-300"
+                                            >
+                                            <div className="grid grid-cols-2 grid-rows-2 w-full aspect-[4/3]">
+                                                {deck.cards.map((card) => (
+                                                <div key={card.cardID} className="overflow-hidden relative">
+                                                    <img
+                                                    src={card.image_uris}
+                                                    alt={`Card ${card.cardID}`}
+                                                    className="w-full h-full object-cover object-top"
+                                                    />
                                                 </div>
-                                                <div className="absolute bottom-0 flex justify-between w-full bg-gradient-to-t from-black/70 to-transparent p-2">
-                                                    <span className="ml-3 text-white text-xl font-semibold">{deck.title}</span>
-                                                    <span className="mr-3 text-gray-50 opacity-70 text-xl font-medium">{deck.format}</span>
-                                                </div>
-                                                </a>
-                                            );
-                                        })}
-                                </div>
-                            </>
-                        ) : (null)}
-                        <CreateDeckModal
-                            isOpen={isCreateDeckOpen}
-                            onClose={() => setIsCreateDeckOpen(false)}
-                            onApply={handleCreateDeck}
-                        />
-                    </div>
-                )}
+                                                ))}
+                                            </div>
+                                            <div className="absolute bottom-0 flex justify-between w-full bg-gradient-to-t from-black/70 to-transparent p-2">
+                                                <span className="ml-3 text-white text-xl font-semibold">{deck.title}</span>
+                                                <span className="mr-3 text-gray-50 opacity-70 text-xl font-medium">{deck.format}</span>
+                                            </div>
+                                            </a>
+                                        );
+                                    })}
+                            </div>
+                        </>
+                    ) : (
+                        <div className="py-10"></div>
+                    )}
+                    <CreateDeckModal
+                        isOpen={isCreateDeckOpen}
+                        onClose={() => setIsCreateDeckOpen(false)}
+                        onApply={handleCreateDeck}
+                    />
+                </div>
             </div>
         </>
-        
     )
 }

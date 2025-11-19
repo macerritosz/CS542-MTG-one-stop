@@ -237,6 +237,13 @@ export default function Decks() {
                                             My Decks
                                         </button>
                                         
+                                        
+                                    </>
+                                )}
+                            </div>
+                            <div className="absolute left-full flex gap-4 ml-[9%]">
+                                {isAuthenticated && (
+                                    <>
                                         <button
                                             type="button"
                                             className={`px-5 py-2 text-gray-800 rounded-3xl whitespace-nowrap ${
@@ -248,21 +255,12 @@ export default function Decks() {
                                             >
                                             Saved
                                         </button>
+                                        <button type="button" onClick={() => setIsCreateDeckOpen(true)} className='px-3 py-2 rounded-lg outline-none ring-1 ring-blue-500 text-blue-500 hover:scale-105 transition-all duration-200 whitespace-nowrap'>
+                                            Create Deck
+                                        </button>
                                     </>
                                 )}
                             </div>
-                            <div className="absolute left-full flex gap-4 ml-[9%]">
-                                <button className='px-7 py-2 rounded-lg outline-none ring-1 ring-purple-500 text-purple-500 hover:scale-105 transition-all duration-200'>
-                                    Sort
-                                </button>
-                                {isAuthenticated && (
-                                    <button type="button" onClick={() => setIsCreateDeckOpen(true)} className='px-3 py-2 rounded-lg outline-none ring-1 ring-blue-500 text-blue-500 hover:scale-105 transition-all duration-200 whitespace-nowrap'>
-                                        Create Deck
-                                    </button>
-                                )}
-                            </div>
-                            
-                            <a href="/" className="absolute left-1/2 -translate-x-1/2 -bottom-[1.5rem] bg-white text-purple-500 text-sm px-3 py-0.5 rounded-b-lg border-x border-b border-purple-500 hover:underline">Advanced Search </a>
                         </div>
                     </form>
                 </div>
@@ -293,25 +291,40 @@ export default function Decks() {
                                             />
                                         </button>
                                     )}
-                                  <div className="grid grid-cols-2 grid-rows-2 w-full aspect-[4/3]">
-                                    {deck.cards.map((card) => (
-                                      <div key={card.cardID} className="overflow-hidden relative">
-                                        <img
-                                          src={card.image_uris}
-                                          alt={`Card ${card.cardID}`}
-                                          className="w-full h-full object-cover object-top"
-                                        />
-                                      </div>
-                                    ))}
-                                  </div>
-                                  <div className="absolute bottom-0 flex justify-between w-full bg-gradient-to-t from-black/70 to-transparent p-2">
-                                    <span className="ml-2 text-white text-xl font-semibold">{deck.title}</span>
-                                    <span className="mr-2 text-gray-50 opacity-70 text-xl font-medium">{deck.format}</span>
-                                    <span className="mr-2 text-gray-50 opacity-70 text-xl font-medium">{deck.display_name}</span>
-                                  </div>
-                                  <div className="absolute top-2 flex justify-between w-full p-2">
-                                    <span className="ml-2 text-white text-xl font-semibold">{timeAgo(deck.created_at)}</span>
-                                  </div>
+                                    <div className="grid grid-cols-2 grid-rows-2 w-full aspect-[4/3]">
+                                        {deck.cards.map((card) => (
+                                        <div key={card.cardID} className="overflow-hidden relative">
+                                            <img
+                                            src={card.image_uris}
+                                            alt={`Card ${card.cardID}`}
+                                            className="w-full h-full object-cover object-top"
+                                            />
+                                        </div>
+                                        ))}
+                                    </div>
+                                    <div className="absolute top-0 left-0 right-0 z-20
+                                        bg-gradient-to-b from-black/70 to-transparent 
+                                        px-3 py-2 flex justify-start">
+                                        <span className="text-white font-medium drop-shadow-md">
+                                            {timeAgo(deck.created_at)}
+                                        </span>
+                                    </div>
+                                    
+                                    <div className="absolute bottom-0 left-0 right-0 z-20 
+                                        bg-gradient-to-t from-black/90 via-black/40 to-transparent 
+                                        px-3 py-3 flex flex-col gap-1">
+                                        <span className="text-white text-lg font-semibold truncate max-w-[65%]">
+                                            {deck.title}
+                                        </span>
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-gray-200 text-base opacity-80 truncate">
+                                                {deck.display_name}
+                                            </span>
+                                            <span className="text-gray-200 text-lg font-medium">
+                                                {deck.format}
+                                            </span>
+                                        </div>
+                                    </div>
                                 </a>
                               );
                         })
