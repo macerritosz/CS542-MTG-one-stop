@@ -12,6 +12,7 @@ import Wiki from './pages/Wiki';
 import Auth from './pages/Auth';
 import DeckDetail from './components/DeckDetail';
 import CardDetail from './components/CardDetail';
+import Leaderboards from './pages/Leaderboards';
 
 function Layout() {
     const location = useLocation();
@@ -29,6 +30,7 @@ function Layout() {
                 <Route path='/decks' element={<Decks/>}/>
                 <Route path='/decks/:deckID' element={<DeckDetail/>}/>
                 <Route path='/wiki' element={<Wiki/>}/>
+                <Route path='/leaderboards' element={<Leaderboards/>}/>
                 <Route path='/login' element={<PublicOnlyRoute> <Auth/></PublicOnlyRoute> }/>
                 <Route path='/signup' element={<PublicOnlyRoute> <Auth/> </PublicOnlyRoute>}/>
             </Routes>
