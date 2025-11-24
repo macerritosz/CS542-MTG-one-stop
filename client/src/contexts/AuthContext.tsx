@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 
 interface AuthContextType {
     token: string | null;
@@ -15,8 +15,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [display_name, setDisplayName] = useState<string | null>(localStorage.getItem("display_name") || null);
 
     const login = (newToken: string, newDisplayName: string) => {
+      const now = Date.now();
       localStorage.setItem("token", newToken);
       localStorage.setItem("display_name", newDisplayName);
+      localStorage.setItem("loginTime", now.toString());
       setToken(newToken);
       setDisplayName(newDisplayName);
       window.location.href = "/";
@@ -25,10 +27,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const logout = () => {
       localStorage.removeItem("token");
       localStorage.removeItem("display_name");
+      localStorage.removeItem("loginTime");
       setToken(null);
       setDisplayName(null);
       window.location.href = "/";
     };
+
+    useEffect(() => {
+      const loginTime = localStorage.getItem("loginTime");
+      if (loginTime) {
+        const elapsed = Date.now() - parseInt(loginTime);
+        const time = 4 * 60 * 60 * 1000; // 4 hours
+        if (elapsed > time) {
+          logout();
+        } else {
+          const remaining = time - elapsed;
+          const timeout = setTimeout(logout, remaining);
+          return () => clearTimeout(timeout);
+        }
+      }
+    }, []);
+
   
     const isAuthenticated = !!token;
   

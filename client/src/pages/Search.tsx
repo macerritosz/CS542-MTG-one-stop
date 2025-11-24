@@ -20,14 +20,14 @@ export default function Search() {
 
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
-        if (!formData.query.trim()) return;
+        if (formData.type === 'cards' && !formData.query.trim()) return;
         navigate(`/${formData.type}?query=${encodeURIComponent(formData.query)}&page=1`);
     }
 
     return (
         <div className="w-full h-screen bg-cover bg-top flex flex-col items-center justify-center" style={{ backgroundImage: `url(${background})` }}>
             <div className="w-[48rem] min-h-[35rem] flex flex-col items-center ">
-            <h1 className="mt-30 text-7xl font-bold bg-gradient-to-r from-purple-300 via-blue-600 to-white bg-clip-text text-transparent leading-tight">
+            <h1 className="mt-25 text-7xl font-bold bg-gradient-to-r from-purple-300 via-blue-600 to-white bg-clip-text text-transparent leading-tight">
                 Gathering Magic
             </h1>
             <p className="-mt-1 text-2xl text-gray-300 drop-shadow-lg font-medium">Search for Cards and player created Decks</p>
@@ -54,7 +54,7 @@ export default function Search() {
                         </button>
                     </div>
                     <input
-                        className="border border-gray-400 rounded-lg px-4 py-2 w-140 text-black bg-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                        className="mt-3 border border-gray-400 rounded-lg px-4 py-2 w-140 text-black bg-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
                         type="text"
                         id="query"
                         name="query"
@@ -63,7 +63,6 @@ export default function Search() {
                         onChange={handleChange}
                     />
                 </form>
-                <a href="/" className="text-gray-300 hover:underline mt-2 font-medium drop-shadow"> Advanced </a>
             </div>
         </div>
     );
