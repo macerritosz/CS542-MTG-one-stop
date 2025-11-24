@@ -69,7 +69,6 @@ router.get("/saveddecks", async (req, res) => {
   }
 });
 
-
 router.post("/publishdeck", async (req, res) => {
   try {
     const { deckID } = req.body;
@@ -402,6 +401,27 @@ router.get("/decks", async (req, res) => {
     res.status(200).json({ page, total, totalPages: Math.ceil(total / limit), decks: decksWithCards });
   } catch (error) {
     res.status(500).json({ error: "Failed to get decks" });
+  }
+});
+
+router.get("/decks/preview", async (req, res) => {
+  try {
+    const deckID = req.query.deckID || req.query.deckId;
+    console.log("PREVIEW ROUTE HIT deckID:", deckID);
+
+    if (!deckID) {
+      return res.status(400).json({ error: "deckID is required" });
+    }
+
+    const [rows]: any = await pool.query(
+      "SELECT cardName, quantity FROM deck_card_popup WHERE deckID = ?",
+      [deckID]
+    );
+
+    res.status(200).json(rows);
+  } catch (error) {
+    console.error("PREVIEW ERROR:", error);
+    res.status(500).json({ error: "Failed to get deck preview" });
   }
 });
 
