@@ -120,7 +120,7 @@ export default function Leaderboards() {
   return (
     <div className="min-h-screen bg-gray-50">
       <section
-        className="w-full h-[45vh] bg-cover bg-center flex flex-col items-center justify-center text-center px-4"
+        className="w-full h-[50vh] bg-cover bg-center flex flex-col items-center justify-center text-center px-4"
         style={{ backgroundImage: `url(${background})` }}
       >
         <div className="backdrop-blur-sm bg-black/40 rounded-3xl px-10 py-8 text-white space-y-6 max-w-5xl">
@@ -258,9 +258,10 @@ function LeaderboardCardsMostUsed({ entries }: { entries: CardMostUsed[] }) {
       </header>
       <div className="grid gap-4">
         {entries.slice(0, 10).map((card, index) => (
-          <div
+          <a
             key={`${card.cardID}-${index}`}
-            className="bg-white rounded-2xl px-6 py-5 shadow-md flex flex-col gap-3"
+            className="bg-white rounded-2xl px-6 py-5 shadow-md flex flex-col gap-3 active:scale-98 transition duration-200"
+            href={`/cards/${card.cardID}`}
           >
             <div className="flex justify-between flex-wrap gap-4">
               <div>
@@ -270,22 +271,19 @@ function LeaderboardCardsMostUsed({ entries }: { entries: CardMostUsed[] }) {
                   {card.rarity.charAt(0).toUpperCase() + card.rarity.slice(1)} • Mana Value {card.mana_value}
                 </p>
               </div>
-              <div className="flex gap-3 flex-wrap">
+              <div className="flex gap-3 flex-wrap items-center">
                 <span className={statPill}>
                   Decks: {formatNumber(card.decks_using_card)}
                 </span>
                 <span className={statPill}>
                   Avg Qty: {formatNumber(card.avg_quantity_per_deck, { maximumFractionDigits: 2 })}
                 </span>
-                <span className={statPill}>
-                  Price: {card.price_usd ? `$${formatNumber(card.price_usd, { minimumFractionDigits: 2 })}` : "N/A"}
-                </span>
               </div>
             </div>
             <div className="text-sm text-gray-500">
               Total copies slotted into decks: {formatNumber(card.total_quantity_in_decks)} (max {card.max_quantity_in_single_deck} in a single deck)
             </div>
-          </div>
+          </a>
         ))}
       </div>
     </section>
@@ -304,9 +302,10 @@ function LeaderboardCardsMostExpensive({ entries }: { entries: CardMostExpensive
       </header>
       <div className="grid gap-4">
         {entries.slice(0, 10).map((card, index) => (
-          <div
+          <a
             key={`${card.cardID}-${index}`}
-            className="bg-white rounded-2xl shadow-lg overflow-hidden flex flex-col md:flex-row"
+            className="bg-white rounded-2xl shadow-lg overflow-hidden flex flex-col md:flex-row active:scale-98 transition duration-200"
+            href={`/cards/${card.cardID}`}
           >
             {card.image_uris && (
               <div className="md:w-40 md:flex-shrink-0 bg-gray-100">
@@ -335,7 +334,7 @@ function LeaderboardCardsMostExpensive({ entries }: { entries: CardMostExpensive
                 </div>
               </div>
             </div>
-          </div>
+          </a>
         ))}
       </div>
     </section>
@@ -354,9 +353,10 @@ function LeaderboardDecksMostSaved({ entries }: { entries: DeckMostSaved[] }) {
       </header>
       <div className="grid gap-4">
         {entries.slice(0, 10).map((deck, index) => (
-          <div
+          <a
             key={`${deck.deckID}-${index}`}
             className="bg-white rounded-2xl px-6 py-5 shadow-md hover:shadow-lg transition-shadow duration-200"
+            href={`/decks/${deck.deckID}`}
           >
             <div className="flex justify-between flex-wrap gap-4">
               <div>
@@ -372,10 +372,9 @@ function LeaderboardDecksMostSaved({ entries }: { entries: DeckMostSaved[] }) {
                 <span className={statPill}>Unique Savers: {deck.unique_savers}</span>
               </div>
             </div>
-          </div>
+          </a>
         ))}
       </div>
     </section>
   );
 }
-
