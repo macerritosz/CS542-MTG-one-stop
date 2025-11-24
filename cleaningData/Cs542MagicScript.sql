@@ -1,3 +1,11 @@
+-- Drop Views
+DROP VIEW IF EXISTS vw_leaderboard_decks_most_saved;
+DROP VIEW IF EXISTS vw_leaderboard_cards_most_expensive;
+DROP VIEW IF EXISTS vw_leaderboard_cards_most_used;
+DROP VIEW IF EXISTS vw_leaderboard_players_popular_builders;
+DROP VIEW IF EXISTS vw_leaderboard_players_decks_built;
+
+-- Drop Tables
 DROP TABLE IF EXISTS Players_Build_Decks;
 DROP TABLE IF EXISTS Players_Save_Decks;
 DROP TABLE IF EXISTS Cards_In_Combos;
@@ -173,18 +181,130 @@ CREATE TABLE Cards_In_Combos (
     FOREIGN KEY (comboID) REFERENCES Combo(comboID) ON DELETE CASCADE
 );
 
-CREATE TABLE Players_Save_Decks (
+CREATE TABLE Players_Build_Decks (
     pid INT,
     deckID INT,
+    display_name VARCHAR(100),
     PRIMARY KEY (pid, deckID),
     FOREIGN KEY (pid) REFERENCES Player(pid) ON DELETE CASCADE,
     FOREIGN KEY (deckID) REFERENCES Deck(deckID) ON DELETE CASCADE
 );
 
-CREATE TABLE Players_Build_Decks (
+CREATE TABLE Players_Save_Decks (
     pid INT,
     deckID INT,
+    display_name VARCHAR(100),
     PRIMARY KEY (pid, deckID),
     FOREIGN KEY (pid) REFERENCES Player(pid) ON DELETE CASCADE,
     FOREIGN KEY (deckID) REFERENCES Deck(deckID) ON DELETE CASCADE
 );
+
+-- ============================================================================
+-- LEADERBOARD VIEWS
+-- ============================================================================
+
+-- PLAYER LEADERBOARDS
+
+-- View 1: Top Players by Decks Built
+-- Shows players ranked by the number of decks they have created
+CREATE VIEW vw_leaderboard_players_decks_built AS
+SELECT 
+    COALESCE(pbd.display_name, p.display_name) AS display_name,
+    COUNT(DISTINCT pbd.deckID) AS total_decks_built,
+    COUNT(DISTINCT CASE WHEN d.is_private = 0 THEN d.deckID END) AS public_decks,
+    COUNT(DISTINCT CASE WHEN d.is_private = 1 THEN d.deckID END) AS private_decks,
+    MAX(d.created_at) AS most_recent_deck
+FROM Players_Build_Decks pbd
+JOIN Deck d ON pbd.deckID = d.deckID
+LEFT JOIN Player p ON pbd.pid = p.pid
+GROUP BY COALESCE(pbd.display_name, p.display_name)
+ORDER BY total_decks_built DESC, most_recent_deck DESC;
+
+-- View 2: Top Players by Decks Saved
+-- Shows players ranked by the number of decks they have saved/favorited
+-- View 3: Most Popular Deck Builders
+-- Shows players whose decks have been saved the most by other players
+CREATE VIEW vw_leaderboard_players_popular_builders AS
+SELECT 
+    COALESCE(pbd.display_name, p.display_name) AS display_name,
+    COUNT(DISTINCT pbd.deckID) AS decks_built,
+    COUNT(DISTINCT psd.deckID) AS total_saves_received,
+    COUNT(DISTINCT psd.display_name) AS unique_savers,
+    ROUND(COUNT(DISTINCT psd.deckID) / NULLIF(COUNT(DISTINCT pbd.deckID), 0), 2) AS avg_saves_per_deck
+FROM Players_Build_Decks pbd
+LEFT JOIN Deck d ON pbd.deckID = d.deckID AND d.is_private = 0
+LEFT JOIN Players_Save_Decks psd ON d.deckID = psd.deckID
+LEFT JOIN Player p ON pbd.pid = p.pid
+GROUP BY COALESCE(pbd.display_name, p.display_name)
+HAVING decks_built > 0
+ORDER BY total_saves_received DESC, avg_saves_per_deck DESC;
+
+-- CARD LEADERBOARDS
+
+-- View 4: Most Used Cards in Decks
+-- Shows cards ranked by how many decks they appear in and total quantity
+CREATE VIEW vw_leaderboard_cards_most_used AS
+SELECT 
+    c.cardID,
+    c.name,
+    c.rarity,
+    c.mv AS mana_value,
+    c.price_usd,
+    COUNT(DISTINCT cid.deckID) AS decks_using_card,
+    SUM(cid.quantity) AS total_quantity_in_decks,
+    AVG(cid.quantity) AS avg_quantity_per_deck,
+    MAX(cid.quantity) AS max_quantity_in_single_deck
+FROM Card c
+JOIN Cards_In_Decks cid ON c.cardID = cid.cardID
+GROUP BY c.cardID, c.name, c.rarity, c.mv, c.price_usd
+HAVING decks_using_card > 0
+ORDER BY decks_using_card DESC, total_quantity_in_decks DESC;
+
+-- View 5: Most Expensive Cards
+-- Shows cards ranked by price (USD)
+CREATE VIEW vw_leaderboard_cards_most_expensive AS
+SELECT 
+    cardID,
+    name,
+    rarity,
+    mv AS mana_value,
+    price_usd,
+    price_foil_usd,
+    set_name,
+    image_uris
+FROM Card
+WHERE price_usd IS NOT NULL
+ORDER BY price_usd DESC;
+
+-- View 6: Highest Mana Value Cards
+-- Shows cards ranked by mana value (converted mana cost)
+-- View 7: Most Popular Cards by Format
+-- Shows cards ranked by usage in decks of specific formats
+-- DECK LEADERBOARDS
+
+-- View 8: Most Saved/Favorited Decks
+-- Shows decks ranked by how many players have saved them
+CREATE VIEW vw_leaderboard_decks_most_saved AS
+SELECT 
+    d.deckID,
+    d.title,
+    d.format,
+    d.created_at,
+    COALESCE(pbd.display_name, p.display_name) AS builder_name,
+    COUNT(DISTINCT psd.deckID) AS total_saves,
+    COUNT(DISTINCT psd.display_name) AS unique_savers,
+    (SELECT COUNT(*) FROM Cards_In_Decks WHERE deckID = d.deckID) AS total_cards
+FROM Deck d
+JOIN Players_Save_Decks psd ON d.deckID = psd.deckID
+LEFT JOIN Players_Build_Decks pbd ON d.deckID = pbd.deckID
+LEFT JOIN Player p ON pbd.pid = p.pid
+WHERE d.is_private = 0
+GROUP BY d.deckID, d.title, d.format, d.created_at, builder_name
+ORDER BY total_saves DESC, unique_savers DESC;
+
+-- View 9: Most Recent Public Decks
+-- Shows recently created public decks
+-- View 10: Decks by Format (Most Popular)
+-- Shows the most popular decks in each format
+-- View 11: Largest Decks (by card count)
+-- Shows decks ranked by total number of cards

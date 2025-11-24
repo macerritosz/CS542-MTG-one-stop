@@ -7,6 +7,7 @@ import deckRoutes from "./src/routes/deck.routes.ts";
 import transactionRoutes from "./src/routes/transaction.routes.ts";
 import playerRoutes from "./src/routes/player.routes.ts";
 import scrapeEventsRoute from "./src/routes/scrapeEvents.routes.ts";
+import leaderboardRoutes from "./src/routes/leaderboard.routes.ts";
 
 const app: Express = express();
 app.use(express.json());
@@ -32,3 +33,4 @@ app.use("/api", deckRoutes);
 app.use("/api", transactionRoutes);
 app.use("/api", playerRoutes);
 app.use("/api", scrapeEventsRoute);
+app.use("/api", leaderboardRoutes);

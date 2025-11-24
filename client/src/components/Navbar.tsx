@@ -26,6 +26,9 @@ export default function Navbar() {
             <a href="/wiki" className="text-gray-700 hover:text-blue-400 text-lg font-medium transition-colors">
               Wiki
             </a>
+            <a href="/leaderboards" className="text-gray-700 hover:text-blue-400 text-lg font-medium transition-colors">
+              Leaderboards
+            </a>
             {isAuthenticated && (
               <a href="/Profile" className="text-gray-700 hover:text-blue-400 text-lg font-medium transition-colors">
                 Profile
