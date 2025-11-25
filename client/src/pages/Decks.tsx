@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react'
+import { use, useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom';
 import background from '../assets/search_background.jpg'
 import { useAuth } from '../contexts/AuthContext';
 import CreateDeckModal from '../components/CreateDeckModal';
 import { Heart } from 'lucide-react';
+import { createPortal } from "react-dom";
 
 interface Deck {
     deckID: number;
@@ -19,6 +20,11 @@ interface Card {
     image_uris: string;
 }
 
+interface DeckPreview {
+    cardName: string;
+    quantity: number;
+}
+
 export default function Decks() {
     const location = useLocation();
     const navigate = useNavigate();
@@ -30,6 +36,12 @@ export default function Decks() {
     const { isAuthenticated, display_name } = useAuth();
     const [isCreateDeckOpen, setIsCreateDeckOpen] = useState(false);
     const [savedDecks, setSavedDecks] = useState<number[]>([]);
+    const [hoveredDeckID,setHoveredDeckID]= useState<number | null>(null);
+    const [previewCache, setPreviewCache] = useState<Record<number, any[]>>({});
+    const [preview, setPreview] = useState<DeckPreview[]>([]);
+    const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 });
+    const [targetPos, setTargetPos] = useState({ x: 0, y: 0 });
+    const [previewWidth, setPreviewWidth] = useState(260);
 
     const params = new URLSearchParams(location.search);
 
@@ -139,6 +151,81 @@ export default function Decks() {
             console.error("Something went wrong", error);
         }
     }
+
+    async function handleDeckPreview(deckID: number) {
+        if (previewCache[deckID]) {
+            setPreview(previewCache[deckID]);
+            setHoveredDeckID(deckID);
+            return;
+    }
+
+    try {
+        const res = await fetch(`http://localhost:5715/api/decks/preview?deckID=${deckID}`);
+        if (!res.ok) {
+            console.error("Preview fetch failed:", res.status);
+            return;
+        }
+
+        const data = await res.json();
+        
+        setPreviewCache(prev => ({ ...prev, [deckID]: data }));
+        setPreview(data);
+        setHoveredDeckID(deckID);
+
+    } catch (error) {
+        console.error("Preview error:", error);
+    }
+    }
+
+    const previewToShow = preview.slice(0, 10);
+
+    const handleMouseMove = (e: React.MouseEvent) => {
+        setTargetPos({
+            x: e.clientX + 20,
+            y: e.clientY + 20,
+        });
+    };
+
+    useEffect(() => {
+        let animationFrame: number;
+
+        const animate = () => {
+            setCursorPos(prev => {
+                //closer to 0.1 = slow, and closer to  1 = faster
+                const smooth = 0.11;
+
+                return {
+                    x: prev.x + (targetPos.x - prev.x) * smooth,
+                    y: prev.y + (targetPos.y - prev.y) * smooth,
+                };
+            });
+
+            animationFrame = requestAnimationFrame(animate);
+        };
+
+        animationFrame = requestAnimationFrame(animate);
+
+        return () => cancelAnimationFrame(animationFrame);
+    }, [targetPos]);
+
+    useEffect(() => {
+        if (preview.length === 0) return;
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
+
+        ctx.font = "600 1rem Inter, sans-serif"; //font
+
+        let maxWidth = 0;
+        preview.forEach((c) => {
+            const fullText = `${c.quantity} × ${c.cardName}`;
+            const metrics = ctx.measureText(fullText);
+            maxWidth = Math.max(maxWidth, metrics.width);
+        });
+
+        setPreviewWidth(Math.max(180, maxWidth + 40));
+    }, [preview]);
+
 
     function timeAgo(dateString: string) {
         const now = new Date();
@@ -264,7 +351,7 @@ export default function Decks() {
                         </div>
                     </form>
                 </div>
-                <div className="mt-20 px-[12%] grid grid-cols-1md:grid-cols-2 lg:grid-cols-3 justify--items-center gap-6 ">
+                <div className="mt-20 px-[12%] grid grid-cols-1md:grid-cols-2 lg:grid-cols-3 justify--items-center gap-4 ">
                     {decks.length > 0 ? (
                         decks.map((deck) => {
                             return (
@@ -272,6 +359,12 @@ export default function Decks() {
                                     key={deck.deckID}
                                     href={`/decks/${deck.deckID}`}
                                     className="relative group block rounded-xl overflow-hidden shadow-lg hover:scale-105 transition-transform duration-300"
+                                    onMouseEnter={() => handleDeckPreview(deck.deckID)}
+                                    onMouseLeave={() => {
+                                        setHoveredDeckID(null);
+                                        setPreview([]);
+                                    }}
+                                    onMouseMove={handleMouseMove}
                                     >
                                     {display_name?.toLowerCase() !== deck.display_name.toLowerCase() && isAuthenticated && (
                                         <button
@@ -325,6 +418,47 @@ export default function Decks() {
                                             </span>
                                         </div>
                                     </div>
+
+                                    {hoveredDeckID === deck.deckID &&
+                                        previewToShow.length > 0 &&
+                                        createPortal(
+                                            <div
+                                                className="
+                                                    fixed z-[9999]
+                                                    bg-white/70 
+                                                    backdrop-blur-md
+                                                    text-purple-600
+                                                    p-3
+                                                    rounded-2xl
+                                                    shadow-xl
+                                                    border border-purple-300/40
+                                                    select-none
+                                                "
+                                                style={{
+                                                    top: cursorPos.y,
+                                                    left: cursorPos.x,
+                                                    pointerEvents: "none",
+                                                    width: previewWidth + "px",
+                                                }}
+                                            >
+                                                <h3 className="text-xl font-bold mb-3 tracking-wide">
+                                                    Deck Preview:
+                                                </h3>
+
+                                                <ul className="space-y-1 text-lg font-medium">
+                                                    {previewToShow.map((c, i) => (
+                                                        <li key={i}>
+                                                            {c.quantity} × {c.cardName}
+                                                        </li>
+                                                    ))}
+                                                    {preview.length > 10 && (
+                                                        <li className="italic opacity-70">…and more</li>
+                                                    )}
+                                                </ul>
+                                            </div>,
+                                            document.body
+                                        )}
+
                                 </a>
                               );
                         })
