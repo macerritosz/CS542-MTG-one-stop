@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from '../contexts/AuthContext';
 import { Store, Search, Trash2, Delete } from 'lucide-react';
+import TransactionDeckModal from "@/components/TransactionDeckModal.tsx";
 
 interface Card {
     image_uris: string;
@@ -10,6 +11,12 @@ interface Card {
     purchase_uris: string;
     scryfall_uri: string;
     quantity: number;
+    price_usd:number;
+    price_foil_usd:number;
+}
+export interface TransactionData {
+    sellerAuth: string;
+    cardInfo: Card;
 }
 
 export default function DeckDetail() {
@@ -20,6 +27,7 @@ export default function DeckDetail() {
     const [createdAt, setCreatedAt] = useState('');
     const [builderName, setBuilderName] = useState('');
     const [isPrivate, setIsPrivate] = useState<number>(1);
+    const [isTransactionDeckOpen, setIsTransactionDeckOpen] = useState(false);
     const [colorDistribution, setColorDistribtion] = useState<{colorName: string, count: number, percentage: number}[]>([]);
     const { display_name } = useAuth();
     const [query, setQuery] = useState('');
@@ -27,6 +35,8 @@ export default function DeckDetail() {
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
     const [hoveredCard, setHoveredCard] = useState<any | null>(null);
+    const [transactionData, setTransactionData] = useState<TransactionData | null>(null)
+
     
     const navigate = useNavigate();
     
@@ -225,7 +235,40 @@ export default function DeckDetail() {
         e.preventDefault();
         if (!query.trim()) return;
         await handleSelectCard(query);
-      }      
+      }
+
+    //transaction logic
+    //send both players
+    //func will run on Apply
+    async function handleTransaction(deckID: number) {
+        try {
+            const res = await fetch("http://localhost:5715/api/transaction", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({deckID, name: display_name}),
+            });
+
+            if (res.ok) {
+                console.log("Deck unsaved!");
+            }
+
+        } catch (error) {
+            console.error("Something went wrong", error);
+        }
+    }
+
+    // handle open Modal
+    const handleOpenTransaction = (data: TransactionData) => {
+        setTransactionData(data)
+        setIsTransactionDeckOpen(true)
+    }
+    //handle close
+    const handleCloseTransaction = () => {
+        setIsTransactionDeckOpen(false)
+        setTransactionData(null)
+    }
+
+
 
     return(
         <div className="min-h-screen bg-gray-100/10 pb-20">
@@ -309,6 +352,15 @@ export default function DeckDetail() {
                                     <Search className="w-5 h-5 text-purple-500 group-hover:text-white transition-colors duration-200" />
                                     <span>Find Card On Scryfall</span>
                                 </a>
+                                {// only show link if not the same user
+                                    }
+                                {display_name?.toLowerCase() !== builderName?.toLowerCase() ? (<div
+                                    onClick={() => handleOpenTransaction({sellerAuth: builderName, cardInfo:hoveredCard})}
+                                    className="group inline-flex w-full items-center justify-center gap-2 border-2 border-red-500 text-red-500 font-semibold px-8 py-3 rounded-lg hover:bg-red-500 hover:text-white transition-all duration-200 whitespace-nowrap"
+                                >
+                                    <Search className="w-5 h-5 text-red-500 group-hover:text-white transition-colors duration-200" />
+                                    <span>Buy Card from {builderName}</span>
+                                </div>) : null }
                             </div>
                         </>
                     ) : 
@@ -427,6 +479,12 @@ export default function DeckDetail() {
                     </div>
                 </div>
             </div>
+            <TransactionDeckModal
+                isOpen={isTransactionDeckOpen}
+                onClose={() => setIsTransactionDeckOpen(false)}
+                onApply={handleTransaction}
+                transactionData ={transactionData}
+            />
         </div>
     );
 }

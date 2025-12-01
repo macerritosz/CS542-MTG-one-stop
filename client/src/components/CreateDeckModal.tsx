@@ -23,7 +23,7 @@ export default function CreateDeckModal({ isOpen, onClose, onApply }: CreateDeck
         'paupercommander', 'duel', 'oldschool', 'premodern', 'predh'
     ];
 
-    const filteredFormats = formData.format ? formats.filter(f => f.toLowerCase().includes(formData.format.toLowerCase())) : [];
+    const filteredFormats = formData.format ? formats.filter(f => f.toLowerCase().includes(formData.format.toLowerCase())) : formats;
 
     function handleChange(e: React.ChangeEvent<HTMLInputElement>){
         const { name, value } = e.target;
@@ -106,7 +106,7 @@ export default function CreateDeckModal({ isOpen, onClose, onApply }: CreateDeck
                                 value={formData.format}
                                 onChange={handleChange}
                                 onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
-                                onFocus={() => formData.format && setShowSuggestions(true)}
+                                onFocus={() => setShowSuggestions(true)}
                                 autoComplete="off"
                             />
                             
