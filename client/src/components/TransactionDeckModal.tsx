@@ -19,17 +19,19 @@ export default function TransactionDeckModal({isOpen, onClose, onApply, transact
 
     const {display_name} = useAuth();
     const upperBound = Number(transactionData?.cardInfo.quantity ?? 0)
-    const [userQuanity, setUserQuanity] = useState<number>(0);
+    const [userQuantity, setUserQuantity] = useState<number>(0);
     const foilAvailable = !!transactionData?.cardInfo.price_foil_usd;
     const [decksBuilt, setDecksBuilt] = useState<any[]>([]);
     const [decksSaved, setDecksSaved] = useState<any[]>([]);
     const [selectedDeck, setSelectedDeck] = useState<string>("");
     const [deckError, setDeckError] = useState<string>("");
+    const [cardPrice, setCardPrice] = useState<number>(0);
+    const [totalPrice, setTotalPrice] = useState<number>(0);
+    const [errors, setErrors] = useState({quantity: '', price: ''});
     const [formData, setFormData] = useState({
-        cardID: '',
-        quantity: '',
+        quantity: 0,
         is_foil: false,
-        sellerName: '',
+        sellerName: transactionData?.sellerAuth,
         buyer_name: display_name
     })
 
@@ -38,7 +40,6 @@ export default function TransactionDeckModal({isOpen, onClose, onApply, transact
             try {
                 const res = await fetch(`http://localhost:5715/api/decks/me?name=${encodeURIComponent(display_name!)}`);
                 const data = await res.json();
-                console.log(data);
                 setDecksBuilt(data.decksBuilt);
                 setDecksSaved(data.decksSaved);
                 console.log(data)
@@ -49,24 +50,54 @@ export default function TransactionDeckModal({isOpen, onClose, onApply, transact
         fetchDecks();
     }, []);
 
+    useEffect(() => {
+        const price = formData.is_foil
+            ? Number(transactionData?.cardInfo.price_foil_usd)
+            : Number(transactionData?.cardInfo.price_usd);
+
+        setCardPrice(price);
+    }, [formData.is_foil, transactionData]);
+
+    useEffect(() => {
+        const total = formData.is_foil
+            ? Number(transactionData?.cardInfo.price_foil_usd)
+            : Number(transactionData?.cardInfo.price_usd) * userQuantity
+
+        setTotalPrice(total);
+    }, [formData.is_foil, transactionData, userQuantity]);
+
+    useEffect(() => {
+        setFormData(prev => ({...prev, quantity: userQuantity}));
+    }, [userQuantity]);
 
     if (!transactionData || ! isOpen) return null;
 
 
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
+        const price = formData.is_foil
+            ? Number(transactionData?.cardInfo.price_foil_usd)
+            : Number(transactionData?.cardInfo.price_usd);
+
+        const quantity = Number(formData.quantity);
+
+        const formErrors = {quantity: '', price: ''};
+        if (quantity <= 0) errors.quantity = "Quantity must be at least 1"
+        if (price <= 0) errors.price = "Card price is invalid"
+
+        if (Object.keys(formErrors).length > 0) {
+            setErrors(formErrors);
+            return
+        }
+
         onApply({
-            cardID: '',
-            quantityBought: '',
-            is_foil: false,
-            card_price: '',
-            total_price: '',
-            sellerName: '',
-            buyer_name: display_name
+            ...formData,
+            card_price: cardPrice,
+            total_price: totalPrice,
+            selectedDeckID: selectedDeck
         });
         setFormData({
-            cardID: '',
-            quantity: '',
+            quantity: 0,
             is_foil: false,
             sellerName: '',
             buyer_name: display_name
@@ -75,10 +106,10 @@ export default function TransactionDeckModal({isOpen, onClose, onApply, transact
 
     //For increment Buttons
     const increment = () =>
-        setUserQuanity(prev => Math.min(prev + 1, upperBound));
+        setUserQuantity(prev => Math.min(prev + 1, upperBound));
 
     const decrement = () =>
-        setUserQuanity(prev => Math.max(prev - 1, 0));
+        setUserQuantity(prev => Math.max(prev - 1, 0));
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
@@ -129,10 +160,10 @@ export default function TransactionDeckModal({isOpen, onClose, onApply, transact
                                 </label>
                                 <input
                                     type="number"
-                                    value={userQuanity}
+                                    value={userQuantity}
                                     onChange={e => {
                                         const val = Number(e.target.value);
-                                        setUserQuanity(Math.min(Math.max(val, 0), upperBound));
+                                        setUserQuantity(Math.min(Math.max(val, 0), upperBound));
                                     }}
                                     className="w-1/2 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900
                                 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent
@@ -166,38 +197,82 @@ export default function TransactionDeckModal({isOpen, onClose, onApply, transact
                                 <div className="space-y-2 text-gray-700">
                                     <p>
                                         <span className="font-medium">Card price:</span>{" "}
-                                        ${formData.is_foil
-                                        ? Number(transactionData.cardInfo.price_foil_usd).toFixed(2)
-                                        : Number(transactionData.cardInfo.price_usd).toFixed(2)
-                                    }
+                                        ${cardPrice.toFixed(2)}
                                     </p>
 
                                     <p>
-                                        <span className="font-medium">Quantity:</span> {userQuanity}
+                                        <span className="font-medium">Quantity:</span> {userQuantity}
                                     </p>
 
                                     <hr className="my-2"/>
 
                                     <p className="text-xl font-bold text-gray-900">
                                         Total: $
-                                        {(
-                                            (formData.is_foil
-                                                    ? Number(transactionData.cardInfo.price_foil_usd)
-                                                    : Number(transactionData.cardInfo.price_usd)
-                                            ) * userQuanity
-                                        ).toFixed(2)}
+                                        {totalPrice.toFixed(2)}
                                     </p>
                                 </div>
+                            </div>
+
+                            <div className="col-start-1 col-end-1">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Add to Deck <span className="text-red-500">*</span>
+                                </label>
+
+                                <select
+                                    value={selectedDeck}
+                                    onChange={e => {
+                                        setSelectedDeck(e.target.value);
+                                        setDeckError("");
+                                    }}
+                                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg
+                                    text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500
+                                    focus:border-transparent transition-all"
+                                    required
+                                >
+                                    <option value="">Select a deck…</option>
+
+                                    {decksBuilt.length > 0 && (
+                                        <optgroup label="My Built Decks">
+                                            {decksBuilt.map((deck, i) => (
+                                                <option key={`built-${i}`} value={deck.title}>
+                                                    {deck.title}
+                                                </option>
+                                            ))}
+                                        </optgroup>
+                                    )}
+
+                                    {decksSaved.length > 0 && (
+                                        <optgroup label="My Saved Decks">
+                                            {decksSaved.map((deck, i) => (
+                                                <option key={`saved-${i}`} value={deck.title}>
+                                                    {deck.title}
+                                                </option>
+                                            ))}
+                                        </optgroup>
+                                    )}
+                                </select>
+
+                                {deckError && (
+                                    <p className="text-red-500 text-sm mt-1">{deckError}</p>
+                                )}
                             </div>
 
 
                             <button
                                 type="submit"
-                                className=" col-start-1 col-end-1 mt-[1.85rem] bg-purple-500 text-white font-semibold px-6 py-2.5 rounded-lg
-                            hover:bg-purple-600 active:bg-purple-700 transition-all shadow-sm hover:shadow-md whitespace-nowrap"
+                                disabled={userQuantity <= 0 || (formData.is_foil ? !transactionData.cardInfo.price_foil_usd : !transactionData.cardInfo.price_usd)}
+                                className={`bg-purple-500 text-white font-semibold px-6 py-2.5 rounded-lg
+                                    ${userQuantity <= 0 ? "opacity-50 cursor-not-allowed" : "hover:bg-purple-600"}
+                                `}
                             >
                                 Buy
                             </button>
+                            {errors.quantity && (
+                                <p className="text-red-500 text-sm mt-1">{errors.quantity}</p>
+                            )}
+                            {errors.price && (
+                                <p className="text-red-500 text-sm mt-1">{errors.price}</p>
+                            )}
                         </div>
                     </div>
                 </form>
