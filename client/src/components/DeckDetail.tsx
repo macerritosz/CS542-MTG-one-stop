@@ -239,20 +239,26 @@ export default function DeckDetail() {
       }
 
     //transaction logic
-    //send both players
-    //func will run on Apply
-    async function handleTransaction(deckID: number) {
-        //send transaction
-        //only if transaction is successful will then run addCardToDeck
+    async function handleTransaction(transactionDatum: {
+            cardID: string
+            quantity: number
+            card_price: number
+            total_price: number
+            selectedDeckID: string
+            is_foil: boolean
+            buyerName: string
+            sellerName: string
+        }) {
+       // ToDo: Add card to deck selected
         try {
             const res = await fetch("http://localhost:5715/api/transaction", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({deckID, name: display_name}),
+                body: JSON.stringify(transactionDatum),
             });
 
             if (res.ok) {
-                console.log("Deck unsaved!");
+                console.log("Transaction successful");
             }
 
         } catch (error) {

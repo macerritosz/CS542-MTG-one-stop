@@ -32,7 +32,7 @@ export default function TransactionDeckModal({isOpen, onClose, onApply, transact
         quantity: 0,
         is_foil: false,
         sellerName: transactionData?.sellerAuth,
-        buyer_name: display_name
+        buyerName: display_name
     })
 
     useEffect(() => {
@@ -59,9 +59,9 @@ export default function TransactionDeckModal({isOpen, onClose, onApply, transact
     }, [formData.is_foil, transactionData]);
 
     useEffect(() => {
-        const total = formData.is_foil
+        const total = (formData.is_foil
             ? Number(transactionData?.cardInfo.price_foil_usd)
-            : Number(transactionData?.cardInfo.price_usd) * userQuantity
+            : Number(transactionData?.cardInfo.price_usd) ) * userQuantity
 
         setTotalPrice(total);
     }, [formData.is_foil, transactionData, userQuantity]);
@@ -85,22 +85,24 @@ export default function TransactionDeckModal({isOpen, onClose, onApply, transact
         if (quantity <= 0) errors.quantity = "Quantity must be at least 1"
         if (price <= 0) errors.price = "Card price is invalid"
 
-        if (Object.keys(formErrors).length > 0) {
+        if (formErrors.quantity || formErrors.price) {
             setErrors(formErrors);
+            console.log("erroor")
             return
         }
 
         onApply({
+            cardID: transactionData?.cardInfo.cardID,
             ...formData,
             card_price: cardPrice,
             total_price: totalPrice,
-            selectedDeckID: selectedDeck
+            selectedDeckID: selectedDeck,
         });
         setFormData({
             quantity: 0,
             is_foil: false,
-            sellerName: '',
-            buyer_name: display_name
+            sellerName: transactionData?.sellerAuth ?? "",
+            buyerName: display_name
         });
     }
 
@@ -256,7 +258,6 @@ export default function TransactionDeckModal({isOpen, onClose, onApply, transact
                                     <p className="text-red-500 text-sm mt-1">{deckError}</p>
                                 )}
                             </div>
-
 
                             <button
                                 type="submit"
