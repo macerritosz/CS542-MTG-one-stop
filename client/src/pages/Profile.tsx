@@ -42,7 +42,9 @@ export default function Profile() {
     const initial = display_name ? display_name[0]!.toUpperCase() : 'U';
     const [decksbuilt, setDecksBuilt] = useState<Deck[] | null>(null);
     const [deckssaved, setDecksSaved] = useState<Deck[] | null>(null);
-   
+    const [transactionHistory, setTransactionHistory] = useState<any | null>(null);
+    const cardCache = useRef<Record<string, string>>({});
+
     const quotes = [
         "The spark of a Planeswalker ignites the multiverse.",
         "In the gathering, all paths converge.",
@@ -135,12 +137,53 @@ export default function Profile() {
                 const data = await res.json();
                 setDecksBuilt(data.decksBuilt);
                 setDecksSaved(data.decksSaved);
-                console.log(data)
             } catch (error) {
                 console.error("Failed to fetch decks:", error);
             }
         };
         fetchDecks();
+    }, []);
+
+    useEffect(() => {
+        if (!display_name) return;
+
+        const fetchTransactionHistory = async () => {
+            try {
+                const res = await fetch(`http://localhost:5715/api/transaction?name=${encodeURIComponent(display_name)}`);
+                const data = await res.json();
+                const transactions = data.transactions;
+                let cardIDset = new Set<string>();
+                transactions.forEach(t => {
+                    cardIDset.add(t.cardID);
+                })
+
+                // Do Card Name work first and then match into the record
+                let records: Record<string, string> = {};
+                await Promise.all(
+                    Array.from(cardIDset).map(async (id) => {
+                        const cardRes = await fetch(`http://localhost:5715/api/card/cardName?cardID=${encodeURIComponent(id)}`);
+                        const cardData = await cardRes.json();
+                        records[id] = String(cardData[0].name);
+                    })
+                )
+                const transactionComplete = transactions.map(t => ({
+                        ...t,
+                        cardName: records[t.cardID]
+                }))
+
+                console.log('Transaction complete', transactionComplete);
+
+                setTransactionHistory(transactionComplete);
+            } catch (err) {
+                console.error("Failed to fetch transaction history:", err);
+            }
+        };
+
+        fetchTransactionHistory();
+    }, [display_name]);
+
+    useEffect(() => {
+        console.log(transactionHistory)
     }, []);
 
     async function handleCreateDeck(deckData: any) {
@@ -227,7 +270,7 @@ export default function Profile() {
                                     Upcoming Events ({events.length})
                                 </h2>
                                 <p className="text-4xl">•</p>
-                                <button 
+                                <button
                                     className="px-5 py-2 text-2xl text-blue rounded-xl border hover:bg-gray-500 hover:text-white active:bg-gray-700 -ml-5 
                                         transform active:scale-95 transition-all duration-150 shadow-lg disabled:opacity-50 disabled:hover:bg-gray-700 disabled:active:scale-100 disabled:transform-none" 
                                     disabled={loading || !targetUrl}
@@ -373,6 +416,71 @@ export default function Profile() {
                         </>
                     ) : (
                         <div className="py-10"></div>
+                    )}
+                    {transactionHistory && transactionHistory.length > 0 ? (
+                        <>
+                            <div className="flex items-start justify-center gap-10 mb-5 mt-16">
+                                <h2 className="text-4xl font-bold text-blue text-center -mr-5">
+                                    Transaction History ({transactionHistory.length})
+                                </h2>
+                            </div>
+                            <div className="mt-12 flex-1 max-w-full max-h-[80vh] overflow-y-scroll [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                                <div className="grid lg:grid-cols-4 gap-3 px-[6%] mb-20">
+                                {transactionHistory.map((tx) => {
+                                    const price = Number(tx.item_price);
+                                    const quantity = Number(tx.ct_quantity);
+                                    const total = Number(tx.total_price) || price * quantity;
+                                    const cardName = tx.cardName ? tx.cardName : "Wrong";
+
+                                    const date = new Date(tx.transaction_time);
+                                    const formattedDate = isNaN(date.getTime())
+                                        ? 'Unknown date'
+                                        : date.toLocaleString();
+
+                                    return (
+                                        <div
+                                            key={`${tx.transaction_time}-${tx.cardID}`}
+                                            className="bg-white rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.3)] p-6 hover:shadow-[0_8px_30px_rgba(0,0,0,0.4)] transition"
+                                        >
+                                            <div >
+                                                <div className="flex justify-around items-center">
+                                                    <h3 className="text-xl font-bold text-gray-800">
+                                                        {tx.sellerName === display_name ? "Sold" : "Bought"}
+                                                    </h3>
+                                                </div>
+                                                <hr/>
+                                                <div className="flex justify-between items-center mb-3">
+                                                    <h4 className="text-lg font-bold text-gray-800">{cardName}</h4>
+                                                    <span className="text-gray-500 text-sm">{formattedDate}</span>
+                                                </div>
+                                            </div>
+
+                                            <div className="mt-3 text-gray-700 font-medium">
+                                                <p className="flex justify-between">
+                                                    <span>Price:</span>
+                                                    <span>${price.toFixed(2)}</span>
+                                                </p>
+
+                                                <p className="flex justify-between">
+                                                    <span>Quantity:</span>
+                                                    <span>{quantity}</span>
+                                                </p>
+
+                                                <div className="border-t border-gray-300 my-2"></div>
+
+                                                <p className="flex justify-between text-lg font-bold">
+                                                    <span>Total:</span>
+                                                    <span>${total.toFixed(2)}</span>
+                                                </p>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                        </>
+                    ) : (
+                        <div className="py-10 text-gray-600 text-xl">No transaction history.</div>
                     )}
                     <CreateDeckModal
                         isOpen={isCreateDeckOpen}

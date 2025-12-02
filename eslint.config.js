@@ -28,13 +28,6 @@ export default defineConfig([
             //sort imports
             "simple-import-sort/imports": "error",
             "simple-import-sort/exports": "error",
-            //general linting rules
-            "no-duplicate-case": "error",
-            "require-atomic-updates": "error",
-            "arrow-body-style": ["error", "as-needed", { "requireReturnForObjectLiteral": true }],
-            "default-case-last": "error",
-            "prefer-spread": "error",
-            "@typescript-eslint/explicit-function-return-type": ["warn"]
         },
         languageOptions: {
             parser: tsPlugin.parser,

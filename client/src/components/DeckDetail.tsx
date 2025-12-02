@@ -36,7 +36,8 @@ export default function DeckDetail() {
     const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
     const [hoveredCard, setHoveredCard] = useState<any | null>(null);
     const [transactionData, setTransactionData] = useState<TransactionData | null>(null)
-    const [selectedCard, setSelectedCard] = useState<any | null>(null);
+    const [selectedCard, setSelectedCard] = useState<Card | null>(null);
+    const [selectedUI, setSelectedUI] = useState<boolean>(false);
 
     
     const navigate = useNavigate();
@@ -288,6 +289,10 @@ export default function DeckDetail() {
         setTransactionData(null)
     }
 
+    const handleSelectingCard = (card: Card) => {
+        setSelectedCard(prev => prev?.cardID === card.cardID ? null : card)
+        setSelectedUI(prev => !prev)
+    }
 
     return(
         <div className="min-h-screen bg-gray-100/10 pb-20">
@@ -451,15 +456,15 @@ export default function DeckDetail() {
                                     {cards.map((card) => (
                                     <span
                                         key={card.cardID}
-                                        onClick={() => setSelectedCard(card)}
+                                        onClick={() => handleSelectingCard(card)}
                                         className={`
                                         group px-3 py-1.5 rounded cursor-pointer flex items-center gap-2 transition-all
                                         ${selectedCard?.cardID === card.cardID
-                                            ? "border-2 border-purple-500"
+                                            ? "outline outline-purple-500"
                                             : "text-gray-700 hover:bg-gray-50"} 
                                         `}
                                         onMouseEnter={() => setHoveredCard(card)}
-                                        onMouseLeave={() => setHoveredCard(null)}
+                                        onMouseLeave={selectedCard ? () => setHoveredCard(null) : () => {} }
                                     >
                                         <span className="text-purple-600 font-medium text-sm min-w-[2rem]">
                                             {card.quantity}x

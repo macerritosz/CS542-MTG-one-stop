@@ -77,3 +77,6 @@ END$$
 
 DELIMITER ;
 show triggers;
+
+CREATE INDEX idx_buyerName ON Players_In_Transactions(buyerName, transaction_time);
+CREATE INDEX idx_sellerName ON Players_In_Transactions(sellerName, transaction_time);

@@ -306,4 +306,19 @@ router.get("/card/info", async (req, res) => {
   }
 });
 
+router.get("/card/cardName", async (req, res) => {
+    try {
+        const cardID = req.query.cardID;
+
+        const [card]: any = await pool.query(
+            "SELECT name FROM Card WHERE cardID = ?",
+            [cardID]
+        );
+        console.log(card)
+        res.status(200).json(card);
+    } catch (error) {
+        res.status(500).json({ error: "Failed to get card name" });
+    }
+})
+
 export default router;

@@ -16,7 +16,6 @@ interface TransactionData {
 }
 
 router.post("/transaction", async (req, res) => {
-
     const {
         cardID,
         quantity,
@@ -38,6 +37,41 @@ router.post("/transaction", async (req, res) => {
       });
     } catch (error) {console.error("Error inserting transaction:", error);
       res.status(500).json({ error: "Failed to create transaction" });
+    }
+});
+
+router.get("/transaction", async (req, res) => {
+    const username = req.query.name;
+    try {
+        const [rows]: any = await pool.query(
+            `SELECT
+                    t.transaction_time,
+                    t.total_price,
+                    pit.buyerName,
+                    pit.sellerName,
+                    cit.cardID,
+                    cit.ct_quantity,
+                    cit.item_price,
+                    cit.is_foil
+                FROM Transaction t 
+                JOIN Players_In_Transactions pit ON pit.transaction_time = t.transaction_time
+                JOIN Cards_In_Transactions cit ON cit.transaction_time = t.transaction_time
+                WHERE pit.buyerName = ? OR pit.sellerName = ?
+                ORDER BY t.transaction_time DESC`,
+            [username, username]
+        );
+        return res.status(200).json({
+            success: true,
+            transactions: rows
+        });
+
+    } catch (error: any) {
+        console.error("Error fetching transactions:", error);
+        return res.status(500).json({
+            success: false,
+            error: "Internal server error",
+            details: error.message
+        });
     }
 });
 
