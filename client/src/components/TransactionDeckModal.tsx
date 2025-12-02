@@ -11,10 +11,6 @@ interface TransactionDeckModalProps {
     transactionData?: TransactionData | null
 }
 
-
-// This modal will buy the hovered card if the displayname not same as the seller
-// will show wuanitty from the deck upper and lower bound
-// will show the price
 export default function TransactionDeckModal({isOpen, onClose, onApply, transactionData}: TransactionDeckModalProps) {
 
     const {display_name} = useAuth();
@@ -23,7 +19,7 @@ export default function TransactionDeckModal({isOpen, onClose, onApply, transact
     const foilAvailable = !!transactionData?.cardInfo.price_foil_usd;
     const [decksBuilt, setDecksBuilt] = useState<any[]>([]);
     const [decksSaved, setDecksSaved] = useState<any[]>([]);
-    const [selectedDeck, setSelectedDeck] = useState<string>("");
+    const [selectedDeck, setSelectedDeck] = useState<any>();
     const [deckError, setDeckError] = useState<string>("");
     const [cardPrice, setCardPrice] = useState<number>(0);
     const [totalPrice, setTotalPrice] = useState<number>(0);
@@ -87,16 +83,30 @@ export default function TransactionDeckModal({isOpen, onClose, onApply, transact
 
         if (formErrors.quantity || formErrors.price) {
             setErrors(formErrors);
-            console.log("erroor")
+            console.log("error")
             return
         }
+        let selectedID;
+        const findDeckIDBuilt = decksBuilt.find(built => built.title === selectedDeck)
+        const findDeckIDSaved = decksSaved.find(saved => saved.title === selectedDeck)
 
+        if(findDeckIDSaved){
+            selectedID = findDeckIDSaved.deckID;
+        }
+        if(findDeckIDBuilt){
+            selectedID = findDeckIDBuilt.deckID;
+        }
+
+        if(selectedID === null || selectedID === undefined) {
+            console.error("Deck not found")
+            return
+        }
         onApply({
             cardID: transactionData?.cardInfo.cardID,
             ...formData,
             card_price: cardPrice,
             total_price: totalPrice,
-            selectedDeckID: selectedDeck,
+            selectedDeckID: selectedID,
         });
         setFormData({
             quantity: 0,

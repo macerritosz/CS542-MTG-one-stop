@@ -244,7 +244,7 @@ export default function DeckDetail() {
             quantity: number
             card_price: number
             total_price: number
-            selectedDeckID: string
+            selectedDeckID: number
             is_foil: boolean
             buyerName: string
             sellerName: string
@@ -258,9 +258,20 @@ export default function DeckDetail() {
             });
 
             if (res.ok) {
-                console.log("Transaction successful");
+            console.log("Transaction successful");
+            const cardID = transactionDatum.cardID
+            const deckID = transactionDatum.selectedDeckID
+            const quantity = transactionDatum.quantity;
+                try {
+                    const res = await fetch('http://localhost:5715/api/decks/card', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({cardID, deckID, quantity}),
+                    });
+                } catch (err) {
+                    console.error("Failed to fetch decks:", err);
+                }
             }
-
         } catch (error) {
             console.error("Something went wrong", error);
         }
