@@ -209,15 +209,14 @@ CREATE TABLE Players_Save_Decks (
 -- Shows players ranked by the number of decks they have created
 CREATE VIEW vw_leaderboard_players_decks_built AS
 SELECT 
-    COALESCE(pbd.display_name, p.display_name) AS display_name,
+    pbd.display_name AS display_name,
     COUNT(DISTINCT pbd.deckID) AS total_decks_built,
     COUNT(DISTINCT CASE WHEN d.is_private = 0 THEN d.deckID END) AS public_decks,
     COUNT(DISTINCT CASE WHEN d.is_private = 1 THEN d.deckID END) AS private_decks,
     MAX(d.created_at) AS most_recent_deck
 FROM Players_Build_Decks pbd
 JOIN Deck d ON pbd.deckID = d.deckID
-LEFT JOIN Player p ON pbd.pid = p.pid
-GROUP BY COALESCE(pbd.display_name, p.display_name)
+GROUP BY pbd.display_name
 ORDER BY total_decks_built DESC, most_recent_deck DESC;
 
 -- View 2: Top Players by Decks Saved
@@ -226,7 +225,7 @@ ORDER BY total_decks_built DESC, most_recent_deck DESC;
 -- Shows players whose decks have been saved the most by other players
 CREATE VIEW vw_leaderboard_players_popular_builders AS
 SELECT 
-    COALESCE(pbd.display_name, p.display_name) AS display_name,
+    pbd.display_name AS display_name,
     COUNT(DISTINCT pbd.deckID) AS decks_built,
     COUNT(DISTINCT psd.deckID) AS total_saves_received,
     COUNT(DISTINCT psd.display_name) AS unique_savers,
@@ -234,8 +233,7 @@ SELECT
 FROM Players_Build_Decks pbd
 LEFT JOIN Deck d ON pbd.deckID = d.deckID AND d.is_private = 0
 LEFT JOIN Players_Save_Decks psd ON d.deckID = psd.deckID
-LEFT JOIN Player p ON pbd.pid = p.pid
-GROUP BY COALESCE(pbd.display_name, p.display_name)
+GROUP BY pbd.display_name
 HAVING decks_built > 0
 ORDER BY total_saves_received DESC, avg_saves_per_deck DESC;
 
@@ -290,16 +288,15 @@ SELECT
     d.title,
     d.format,
     d.created_at,
-    COALESCE(pbd.display_name, p.display_name) AS builder_name,
+    pbd.display_name AS builder_name,
     COUNT(DISTINCT psd.deckID) AS total_saves,
     COUNT(DISTINCT psd.display_name) AS unique_savers,
     (SELECT COUNT(*) FROM Cards_In_Decks WHERE deckID = d.deckID) AS total_cards
 FROM Deck d
 JOIN Players_Save_Decks psd ON d.deckID = psd.deckID
 LEFT JOIN Players_Build_Decks pbd ON d.deckID = pbd.deckID
-LEFT JOIN Player p ON pbd.pid = p.pid
 WHERE d.is_private = 0
-GROUP BY d.deckID, d.title, d.format, d.created_at, builder_name
+GROUP BY d.deckID, d.title, d.format, d.created_at, pbd.display_name
 ORDER BY total_saves DESC, unique_savers DESC;
 
 -- View 9: Most Recent Public Decks
