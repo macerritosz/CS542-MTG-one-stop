@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useParams } from "react-router-dom";
 import { useNavigate } from 'react-router-dom';
-import { CircleOff, CircleCheckBig, Store, Search } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { CircleOff, CircleCheckBig, Store, Search, Plus, ChevronDown } from 'lucide-react';
 
 interface Card {
     cardID: string;
@@ -65,7 +66,12 @@ export default function CardInfo(){
     const [suggestions, setSuggestions] = useState<string[]>([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [decks, setDecks] = useState<Deck[]>([]);
-
+    const [alternatePrints, setAlternatePrints] = useState<Card[]>([]);
+    const [currentPrintIndex, setCurrentPrintIndex] = useState(0);
+    const [showDeckDropdown, setShowDeckDropdown] = useState(false);
+    const [userDecks, setUserDecks] = useState<Deck[]>([]);
+    const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+    const { display_name, isAuthenticated } = useAuth();
 
     const colors: Record<string, string> = {
         '{W}': 'https://svgs.scryfall.io/card-symbols/W.svg',
@@ -148,11 +154,19 @@ export default function CardInfo(){
             setKeywords(data.keywords)
             setProducedMana(data.produced_mana)
             setColorIdentity(data.color_identity)
+            console.log(data.card.edhrec_rank)
+            
+            const printsRes = await fetch(`http://localhost:5715/api/cardssimple?query=${encodeURIComponent(data.card.name)}`);
+            const printsData = await printsRes.json();
+            setAlternatePrints(printsData.cards);
+
+            const currentIndex = printsData.cards.findIndex((c: Card) => c.cardID === cardID);
+            setCurrentPrintIndex(currentIndex >= 0 ? currentIndex : 0);
 
             res = await fetch(`http://localhost:5715/api/cardsindecks?cardID=${encodeURIComponent(cardID!)}`);
             data = await res.json();
             setDecks(data.decks)
-            console.log(data.decks.length)
+            
           } catch (err) {
             console.error("Failed to fetch card:", err);
           }
@@ -178,8 +192,62 @@ export default function CardInfo(){
         };
         const timeout = setTimeout(fetchCards, 250);
         return () => clearTimeout(timeout);
-      }, [query]);
+    }, [query]);
 
+    useEffect(() => {
+        async function fetchUserDecks() {
+          try {
+            const res = await fetch(`http://localhost:5715/api/decks/me?name=${encodeURIComponent(display_name!)}`);
+            const data = await res.json();
+            setUserDecks(data.decksBuilt);
+          } catch (error) {
+            console.error("Failed to fetch decks:", error);
+          }
+        }
+        if (display_name) {
+          fetchUserDecks();
+        }
+    }, [display_name]);
+
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+          if (showDeckDropdown) {
+            const target = e.target as HTMLElement;
+            if (!target.closest('.deck-dropdown-container')) {
+              setShowDeckDropdown(false);
+            }
+          }
+        };
+        
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [showDeckDropdown]);
+
+
+    async function addCardToDeck(deckID: number) {
+        try {
+          const quantity = 1;
+          const res = await fetch('http://localhost:5715/api/decks/card', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ cardID: card?.cardID, deckID, quantity }),
+          });
+          
+          if (res.ok) {
+            const deck = userDecks.find(d => d.deckID === deckID);
+            setMessage({ 
+              text: `Added ${card?.name} to ${deck?.title}`, 
+              type: 'success' 
+            });
+            setTimeout(() => setMessage(null), 3000);
+            setShowDeckDropdown(false);
+          }
+        } catch (err) {
+          console.error("Failed to add card to deck:", err);
+          setMessage({ text: 'Failed to add card to deck', type: 'error' });
+          setTimeout(() => setMessage(null), 3000);
+        }
+    }
 
     function renderOracleText(text: string): React.ReactNode[] {
         const parts = text.split(/(\{.*?\})/g);
@@ -197,6 +265,13 @@ export default function CardInfo(){
             }
             return <span key={index}>{part}</span>;
         });
+    }
+
+    function handleImageClick() {
+        if (alternatePrints.length <= 1) return;
+        const nextIndex = (currentPrintIndex + 1) % alternatePrints.length;
+        const nextCard = alternatePrints[nextIndex];
+        if (nextCard) navigate(`/cards/${nextCard.cardID}`);
     }
 
     function handleChange(e: React.ChangeEvent<HTMLInputElement>){
@@ -239,52 +314,91 @@ export default function CardInfo(){
         <div className="min-h-screen bg-gray-100/10 pb-20">
             {card && (
                 <>
-                    <div className="max-w-[1400px] mx-auto mt-20 flex gap-10 justify-center">
+                    <div className="max-w-[1400px] mx-auto mt-12 flex gap-10 justify-center">
                         <div className="sticky top-20 h-fit self-start flex-shrink-0 flex flex-col items-center">
-            
-                        <form onSubmit={handleSubmit} className="relative w-max mb-4 z-50">
-                            <div className="relative w-120">
-                                <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 z-10" />
-                                <input
-                                    className="pl-10 border border-gray-400 rounded-lg px-4 py-2 w-full text-black bg-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-gray-500"
-                                    type="text"
-                                    id="query"
-                                    name="query"
-                                    placeholder="Search for cards"
-                                    value={query}
-                                    onChange={handleChange}
-                                    onFocus={() => query && setShowSuggestions(true)}
-                                    onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
-                                    autoComplete="off"
-                                />
-
-                                {showSuggestions && suggestions.length > 0 && (
-                                <ul className="absolute z-20 bg-white border border-gray-200 rounded-lg mt-1 w-full max-h-48 overflow-y-auto shadow-lg">
-                                    {suggestions.map((name, index) => (
-                                    <li
-                                        key={index}
-                                        onClick={() => handleSelectCard(name)}
-                                        className="px-4 py-2 text-gray-700 hover:bg-purple-100 cursor-pointer transition-all"
-                                    >
-                                        {name}
-                                    </li>
-                                    ))}
-                                </ul>
-                                )}
+                            <div className={`w-[380px] mb-3 px-4 py-1 rounded-lg text-center font-medium transition-opacity duration-200 truncate ${
+                                message 
+                                    ? (message.type === 'success' ? 'bg-green-100 text-green-700 opacity-100' : 'bg-red-100 text-red-700 opacity-100')
+                                    : 'bg-gray-100 text-transparent opacity-0'
+                            }`}>
+                                {message ? message.text : 'placeholder'}
                             </div>
+                            <form onSubmit={handleSubmit} className="relative w-max mb-4 z-50 flex gap-5 justify-start items-center">
+                                <div className={`relative ${isAuthenticated ? 'w-80' : 'w-[380px]'}`}>
+                                    <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 z-10" />
+                                    <input
+                                        className="pl-10 border border-gray-400 rounded-lg px-4 py-2 w-full text-black bg-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-gray-500"
+                                        type="text"
+                                        id="query"
+                                        name="query"
+                                        placeholder="Search for cards"
+                                        value={query}
+                                        onChange={handleChange}
+                                        onFocus={() => query && setShowSuggestions(true)}
+                                        onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+                                        autoComplete="off"
+                                    />
+                                    {showSuggestions && suggestions.length > 0 && (
+                                        <ul className="absolute z-20 bg-white border border-gray-200 rounded-lg mt-1 w-full max-h-48 overflow-y-auto shadow-lg">
+                                            {suggestions.map((name, index) => (
+                                            <li
+                                                key={index}
+                                                onClick={() => handleSelectCard(name)}
+                                                className="px-4 py-2 text-gray-700 hover:bg-purple-100 cursor-pointer transition-all"
+                                            >
+                                                {name}
+                                            </li>
+                                            ))}
+                                        </ul>
+                                    )}
+                                </div>
+                                {isAuthenticated && (
+                                    <div className="relative deck-dropdown-container">
+                                        <button
+                                            onClick={() => setShowDeckDropdown(!showDeckDropdown)}
+                                            className="px-3 py-2 border border-purple-400 rounded-lg text-purple-500 hover:cursor-pointer focus:outline-none focus:ring-1 focus:ring-purple-500 flex items-center gap-2"
+                                        >
+                                            <Plus className="w-4 h-4" />
+                                            Add to Deck
+                                            <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${showDeckDropdown ? 'rotate-180' : ''}`} />
+                                        </button>
+
+                                        {showDeckDropdown && (
+                                            <div className="absolute top-full left-0 mt-2 bg-white border border-gray-300 rounded-lg shadow-xl z-50 w-full max-h-[300px] overflow-y-auto">
+                                            {userDecks.length > 0 ? (
+                                                userDecks.map((deck) => (
+                                                <button
+                                                    key={deck.deckID}
+                                                    onClick={() => addCardToDeck(deck.deckID)}
+                                                    className="w-full text-left px-3 py-2 hover:bg-purple-100 transition-colors border-b border-gray-100 last:border-b-0 flex flex-col gap-1"
+                                                >
+                                                    <span className="text-gray-700 text-center">{deck.title}</span>
+
+                                                </button>
+                                                ))
+                                            ) : (
+                                                <div className="px-5 py-4 text-gray-500 text-center">
+                                                No decks available
+                                                </div>
+                                            )}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                             </form>
 
                             <img
-                            src={card.image_uris}
-                            alt={`Card ${card.cardID}`}
-                            className="w-[380px] h-auto object-cover rounded-2xl shadow-md"
+                                src={card.image_uris}
+                                alt={`Card ${card.cardID}`}
+                                className="w-[380px] h-auto object-cover rounded-2xl shadow-lg"
+                                onClick={handleImageClick}
                             />
-                            <div className="flex flex-col items-center gap-3 w-[275px] mt-8">
+                            <div className="flex flex-col items-center gap-3 w-[275px] mt-5">
                                 <a
                                     href={card.purchase_uris}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="group inline-flex w-full items-center justify-center gap-2 border-2 border-blue-500 text-blue-500 font-semibold px-8 py-3 rounded-lg hover:bg-blue-500 hover:text-white transition-all duration-200"
+                                    className="group inline-flex w-full items-center justify-center gap-2 border-2 border-blue-500 text-blue-500 font-semibold px-8 py-3 rounded-lg hover:bg-blue-500 hover:text-white transition-all duration-20 whitespace-nowrap"
                                 >
                                     <Store className="w-5 h-5 text-blue-500 group-hover:text-white transition-colors duration-200" />
                                     <span>Buy Card On TCG Player</span>
@@ -294,15 +408,14 @@ export default function CardInfo(){
                                     href={card.scryfall_uri}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="group inline-flex w-full items-center justify-center gap-2 border-2 border-purple-500 text-purple-500 font-semibold px-8 py-3 rounded-lg hover:bg-purple-500 hover:text-white transition-all duration-200"
+                                    className="group inline-flex w-full items-center justify-center gap-2 border-2 border-purple-500 text-purple-500 font-semibold px-8 py-3 rounded-lg hover:bg-purple-500 hover:text-white transition-all duration-200 whitespace-nowrap"
                                 >
                                     <Search className="w-5 h-5 text-purple-500 group-hover:text-white transition-colors duration-200" />
                                     <span>Find Card On Scryfall</span>
                                 </a>
                             </div>
-
                         </div>
-                        <div className="flex-1 min-w-0 max-w-3xl max-h-[80vh] overflow-y-scroll [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                        <div className="mt-10 flex-1 min-w-0 max-w-3xl max-h-[80vh] overflow-y-scroll [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                             <div className='flex flex-col items-center'>
                                 <div className='flex flex-wrap gap-6 items-center justify-center'>
                                     <h1 className='text-4xl font-semibold text-gray-600'>{card.name}</h1>
@@ -320,7 +433,7 @@ export default function CardInfo(){
                                         )}
                                 </div>
                                 {keywords ? (
-                                    <div className='flex gap-2 mt-3'>
+                                    <div className="flex flex-wrap justify-center gap-x-3 gap-y-2 mt-3 text-center">
                                         {keywords.map((item, index) => (
                                             <span key={index} className='text-3xl text-gray-400'>
                                                 {item.keyword}{index < keywords.length - 1 ? ', ' : ''}
@@ -339,54 +452,54 @@ export default function CardInfo(){
                                 )}
 
                                 <div className='grid grid-cols-2 gap-x-15 gap-y-4 mt-8 text-lg'>
-                                    <div className='flex gap-x-12'>
+                                    <div className='flex gap-x-15'>
                                         <span className='text-gray-500 font-medium'>Rarity:</span>
                                         <span className='text-gray-700 capitalize'>{card.rarity}</span>
                                     </div>
                                     
-                                    {card.mv !== null && (
+                                    {card.mv !== null && card.mv !== 0 && (
                                         <div className='flex justify-between'>
                                             <span className='text-gray-500 font-medium'>Mana Value:</span>
                                             <span className='text-gray-700'>{card.mv}</span>
                                         </div>
                                     )}
                                     
-                                    {card.power !== null && (
+                                    {card.power !== null && String(card.power) !== 'None' && (
                                         <div className='flex justify-between'>
                                             <span className='text-gray-500 font-medium'>Power:</span>
                                             <span className='text-gray-700'>{card.power}</span>
                                         </div>
                                     )}
                                     
-                                    {card.toughness !== null && (
+                                    {card.toughness !== null && String(card.toughness) !== 'None' && (
                                         <div className='flex justify-between'>
                                             <span className='text-gray-500 font-medium'>Toughness:</span>
                                             <span className='text-gray-700'>{card.toughness}</span>
                                         </div>
                                     )}
                                     
-                                    {card.loyalty && (
+                                    {card.loyalty && card.loyalty !== 'None' && (
                                         <div className='flex justify-between'>
                                             <span className='text-gray-500 font-medium'>Loyalty:</span>
                                             <span className='text-gray-700'>{card.loyalty}</span>
                                         </div>
                                     )}
                                     
-                                    {card.price_usd !== null && (
+                                    {card.price_usd !== null && String(card.price_usd) !== '0.00' && (
                                         <div className='flex justify-between'>
                                             <span className='text-gray-500 font-medium'>Price:</span>
                                             <span className='text-gray-700'>${card.price_usd}</span>
                                         </div>
                                     )}
                                     
-                                    {card.price_foil_usd !== null && (
+                                    {card.price_foil_usd !== null && String(card.price_foil_usd) !== '0.00' && (
                                         <div className='flex justify-between'>
                                             <span className='text-gray-500 font-medium'>Foil Price:</span>
                                             <span className='text-gray-700'>${card.price_foil_usd}</span>
                                         </div>
                                     )}
                                     
-                                    {card.edhrec_rank && (
+                                    {card.edhrec_rank !== null && card.loyalty !== 'None' && (
                                         <div className='flex justify-between'>
                                             <span className='text-gray-500 font-medium'>Rank:</span>
                                             <span className='text-gray-700'>#{card.edhrec_rank}</span>
@@ -484,7 +597,7 @@ export default function CardInfo(){
                                                             
 
                                 {legalities ? (
-                                    <div className='grid grid-cols-3 gap-9 gap-x-11 text-gray-600 mt-5 mb-50'> 
+                                    <div className='grid grid-cols-3 gap-9 gap-x-11 text-gray-600 mt-5 ml-[10%] mb-50'> 
                                         {Object.entries(legalities).sort(([a], [b]) => a.localeCompare(b)).map(([format, value]) => (
                                             format !== 'cardID' ? (
                                                 <div key={format} className='flex items-center space-x-2'>
@@ -507,8 +620,8 @@ export default function CardInfo(){
                     </div>
                     {decks.length > 0 ? (
                         <div className='flex flex-col items-center mt-30'>
-                            <h1 className='text-gray-600 text-5xl font-semibold underline'>Popular Decks Using Card:</h1>
-                            <div className="mt-12 px-[12%] grid grid-cols-1md:grid-cols-2 lg:grid-cols-3 justify--items-center gap-6 ">
+                            <h2 className='text-gray-600 text-3xl font-semibold mb-8'>Popular Decks Using This Card</h2>
+                            <div className=" px-[12%] grid grid-cols-1md:grid-cols-2 lg:grid-cols-3 justify--items-center gap-6 ">
                                     {decks.map((deck) => (
                                         <a
                                         key={deck.deckID}

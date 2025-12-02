@@ -1,4 +1,3 @@
-import { FaSearch } from 'react-icons/fa'; 
 import { useAuth } from '../contexts/AuthContext';
 
 export default function Navbar() {
@@ -15,21 +14,26 @@ export default function Navbar() {
             <a href="/" className="text-gray-700 hover:text-blue-400 text-lg font-medium transition-colors">
               Home
             </a>
+            <a href="/search" className="text-gray-700 hover:text-blue-400 text-lg font-medium transition-colors">
+              Search
+            </a>
             <a href="/#about" className="text-gray-700 hover:text-blue-400 text-lg font-medium transition-colors">
               About
             </a>
             <a href="/#mission" className="text-gray-700 hover:text-blue-400 text-lg font-medium transition-colors">
               Our Mission
             </a>
-            <a href="/search" className="text-gray-700 hover:text-blue-400 text-lg font-medium transition-colors">
-              Search
-            </a>
             <a href="/wiki" className="text-gray-700 hover:text-blue-400 text-lg font-medium transition-colors">
               Wiki
             </a>
-            <a href="/Profile" className="text-gray-700 hover:text-blue-400 text-lg font-medium transition-colors">
-              Profile
+            <a href="/leaderboards" className="text-gray-700 hover:text-blue-400 text-lg font-medium transition-colors">
+              Leaderboards
             </a>
+            {isAuthenticated && (
+              <a href="/Profile" className="text-gray-700 hover:text-blue-400 text-lg font-medium transition-colors">
+                Profile
+              </a>
+            )}
           
           <div className="flex items-center justify-center space-x-6">
             {!isAuthenticated && ( 
@@ -47,9 +51,6 @@ export default function Navbar() {
                 Logout
               </button>
             )}
-            <a href='/search'>
-              <FaSearch className={'w-5 h-5'}/>
-            </a>
           </div>
           </div>
         </div>
