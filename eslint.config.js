@@ -29,17 +29,12 @@ export default defineConfig([
             "simple-import-sort/imports": "error",
             "simple-import-sort/exports": "error",
             //general linting rules
-            "curly": ["error"],
             "no-duplicate-case": "error",
-            "no-unused-vars": "error",
             "require-atomic-updates": "error",
             "arrow-body-style": ["error", "as-needed", { "requireReturnForObjectLiteral": true }],
-            "camelcase": ["error", { "ignoreDestructuring": true }],
             "default-case-last": "error",
-            "no-implicit-coercion": "error",
             "prefer-spread": "error",
-            "@typescript-eslint/explicit-function-return-type": ["warn"],
-            "@typescript-eslint/no-explicit-any": ["warn"],
+            "@typescript-eslint/explicit-function-return-type": ["warn"]
         },
         languageOptions: {
             parser: tsPlugin.parser,

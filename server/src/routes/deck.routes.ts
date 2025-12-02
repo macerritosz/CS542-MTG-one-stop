@@ -221,7 +221,7 @@ router.get("/decks/info", async (req, res) => {
     const placeholders = cardIDs.map(() => '?').join(',');
 
     const [card_info]: any = await pool.query(
-      `SELECT image_uris, cardID, name, purchase_uris, scryfall_uri FROM Card WHERE cardID IN (${placeholders})`,
+      `SELECT image_uris, cardID, name, purchase_uris, scryfall_uri, price_usd, price_foil_usd FROM Card WHERE cardID IN (${placeholders})`,
       cardIDs
     );
 

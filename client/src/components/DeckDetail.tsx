@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from '../contexts/AuthContext';
 import { Store, Search, Trash2, Delete } from 'lucide-react';
+import TransactionDeckModal from "@/components/TransactionDeckModal.tsx";
 
 interface Card {
     image_uris: string;
@@ -10,6 +11,12 @@ interface Card {
     purchase_uris: string;
     scryfall_uri: string;
     quantity: number;
+    price_usd:number;
+    price_foil_usd:number;
+}
+export interface TransactionData {
+    sellerAuth: string;
+    cardInfo: Card;
 }
 
 export default function DeckDetail() {
@@ -20,6 +27,7 @@ export default function DeckDetail() {
     const [createdAt, setCreatedAt] = useState('');
     const [builderName, setBuilderName] = useState('');
     const [isPrivate, setIsPrivate] = useState<number>(1);
+    const [isTransactionDeckOpen, setIsTransactionDeckOpen] = useState(false);
     const [colorDistribution, setColorDistribtion] = useState<{colorName: string, count: number, percentage: number}[]>([]);
     const { display_name } = useAuth();
     const [query, setQuery] = useState('');
@@ -27,6 +35,9 @@ export default function DeckDetail() {
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
     const [hoveredCard, setHoveredCard] = useState<any | null>(null);
+    const [transactionData, setTransactionData] = useState<TransactionData | null>(null)
+    const [selectedCard, setSelectedCard] = useState<any | null>(null);
+
     
     const navigate = useNavigate();
     
@@ -225,7 +236,47 @@ export default function DeckDetail() {
         e.preventDefault();
         if (!query.trim()) return;
         await handleSelectCard(query);
-      }      
+      }
+
+    //transaction logic
+    async function handleTransaction(transactionDatum: {
+            cardID: string
+            quantity: number
+            card_price: number
+            total_price: number
+            selectedDeckID: string
+            is_foil: boolean
+            buyerName: string
+            sellerName: string
+        }) {
+       // ToDo: Add card to deck selected
+        try {
+            const res = await fetch("http://localhost:5715/api/transaction", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(transactionDatum),
+            });
+
+            if (res.ok) {
+                console.log("Transaction successful");
+            }
+
+        } catch (error) {
+            console.error("Something went wrong", error);
+        }
+    }
+
+    // handle open Modal
+    const handleOpenTransaction = (data: TransactionData) => {
+        setTransactionData(data)
+        setIsTransactionDeckOpen(true)
+    }
+    //handle close
+    const handleCloseTransaction = () => {
+        setIsTransactionDeckOpen(false)
+        setTransactionData(null)
+    }
+
 
     return(
         <div className="min-h-screen bg-gray-100/10 pb-20">
@@ -309,14 +360,68 @@ export default function DeckDetail() {
                                     <Search className="w-5 h-5 text-purple-500 group-hover:text-white transition-colors duration-200" />
                                     <span>Find Card On Scryfall</span>
                                 </a>
+                                {// only show link if not the same user
+                                    }
+                                {display_name?.toLowerCase() !== builderName?.toLowerCase() ? (<div
+                                    onClick={() => handleOpenTransaction({sellerAuth: builderName, cardInfo:hoveredCard})}
+                                    className="group inline-flex w-full items-center justify-center gap-2 border-2 border-red-500 text-red-500 font-semibold px-8 py-3 rounded-lg hover:bg-red-500 hover:text-white transition-all duration-200 whitespace-nowrap"
+                                >
+                                    <Search className="w-5 h-5 text-red-500 group-hover:text-white transition-colors duration-200" />
+                                    <span>Buy Card from {builderName}</span>
+                                </div>) : null }
                             </div>
                         </>
-                    ) : 
-                    <img
-                        src='https://via.placeholder.com/380x530?text=No+Image'
-                        alt='No Image'
-                        className="w-[380px] h-[530px] object-cover rounded-2xl shadow-lg"
-                    />
+                    ) : selectedCard ? (
+                            <>
+                                <a href={`../cards/${selectedCard.cardID}`}>
+                                    <img
+                                        src={selectedCard.image_uris}
+                                        alt={selectedCard.name}
+                                        className={`w-[380px] h-auto object-cover rounded-2xl shadow-lg`}
+                                    />
+                                </a>
+                                <div className="flex flex-col items-center gap-3 w-[275px] mt-5">
+                                    <a
+                                        href={selectedCard.purchase_uris}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="group inline-flex w-full items-center justify-center gap-2 border-2 border-blue-500 text-blue-500 font-semibold px-8 py-3 rounded-lg hover:bg-blue-500 hover:text-white transition-all duration-20 whitespace-nowrap"
+                                    >
+                                        <Store
+                                            className="w-5 h-5 text-blue-500 group-hover:text-white transition-colors duration-200"/>
+                                        <span>Buy Card On TCG Player</span>
+                                    </a>
+                                    <a
+                                        href={selectedCard.scryfall_uri}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="group inline-flex w-full items-center justify-center gap-2 border-2 border-purple-500 text-purple-500 font-semibold px-8 py-3 rounded-lg hover:bg-purple-500 hover:text-white transition-all duration-200 whitespace-nowrap"
+                                    >
+                                        <Search
+                                            className="w-5 h-5 text-purple-500 group-hover:text-white transition-colors duration-200"/>
+                                        <span>Find Card On Scryfall</span>
+                                    </a>
+                                    {// only show link if not the same user
+                                    }
+                                    {display_name?.toLowerCase() !== builderName?.toLowerCase() ? (<div
+                                        onClick={() => handleOpenTransaction({
+                                            sellerAuth: builderName,
+                                            cardInfo: selectedCard
+                                        })}
+                                        className="group inline-flex w-full items-center justify-center gap-2 border-2 border-red-500 text-red-500 font-semibold px-8 py-3 rounded-lg hover:bg-red-500 hover:text-white transition-all duration-200 whitespace-nowrap"
+                                    >
+                                        <Search
+                                            className="w-5 h-5 text-red-500 group-hover:text-white transition-colors duration-200"/>
+                                        <span>Buy Card from {builderName}</span>
+                                    </div>) : null}
+                                </div>
+                            </>
+                        ) :
+                        <img
+                            src='https://via.placeholder.com/380x530?text=No+Image'
+                            alt='No Image'
+                            className="w-[380px] h-[530px] object-cover rounded-2xl shadow-lg"
+                        />
                 } 
                 
                 </div>
@@ -328,26 +433,38 @@ export default function DeckDetail() {
                         </div>
                         {cards && cards.length > 0 ? (
                             <>
-                                <span className='font-semibold text-gray-600 mb-2'>{`Cards: (${cards.reduce((total, c) => total + c.quantity, 0)})`}</span>
+                            <span className='font-semibold text-gray-600 mb-2'>
+                            {`Cards: (${cards.reduce((total, c) => total + c.quantity, 0)})`}
+                            </span>
                                 <div className="grid grid-cols-3 gap-x-1 gap-y-1 w-full mt-2">
                                     {cards.map((card) => (
                                     <span
                                         key={card.cardID}
+                                        onClick={() => setSelectedCard(card)}
+                                        className={`
+                                        group px-3 py-1.5 rounded cursor-pointer flex items-center gap-2 transition-all
+                                        ${selectedCard?.cardID === card.cardID
+                                            ? "border-2 border-purple-500"
+                                            : "text-gray-700 hover:bg-gray-50"} 
+                                        `}
                                         onMouseEnter={() => setHoveredCard(card)}
-                                        className="group px-3 py-1.5 text-gray-700 hover:bg-gray-50 rounded cursor-pointer transition-all duration-150 flex items-center gap-2"
+                                        onMouseLeave={() => setHoveredCard(null)}
                                     >
-                                        <span className="text-purple-600 font-medium text-sm min-w-[2rem]">{card.quantity}x</span>
+                                        <span className="text-purple-600 font-medium text-sm min-w-[2rem]">
+                                            {card.quantity}x
+                                        </span>
+                                        {/* Text link */}
                                         <a
-                                            href={`../cards/${hoveredCard?.cardID}`}
+                                            href={`../cards/${card.cardID}`} // navigate to card
                                             className="group-hover:text-purple-600 text-[1.05rem] transition-colors truncate block"
                                             style={{
-                                            maxWidth: "11rem",
-                                            whiteSpace: "nowrap",
-                                            overflow: "hidden",
-                                            textOverflow: "ellipsis",
+                                                maxWidth: "11rem",
+                                                whiteSpace: "nowrap",
+                                                overflow: "hidden",
+                                                textOverflow: "ellipsis",
                                             }}
                                         >
-                                            {card.name}
+                                        {card.name}
                                         </a>
                                         {display_name?.toLowerCase() === builderName?.toLowerCase() && (
                                             <Trash2 
@@ -427,6 +544,14 @@ export default function DeckDetail() {
                     </div>
                 </div>
             </div>
+            {isTransactionDeckOpen && transactionData && (
+                <TransactionDeckModal
+                    isOpen={isTransactionDeckOpen}
+                    transactionData={transactionData}
+                    onClose={handleCloseTransaction}
+                    onApply={handleTransaction}
+                />
+            )}
         </div>
     );
 }
