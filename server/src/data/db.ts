@@ -15,9 +15,9 @@ const pool = await mysql.createPool({
 
 try {
   await pool.query("SELECT 1");
-  console.log("✅ Connected to MySQL database!");
+  console.log("Connected to MySQL database!");
 } catch (err) {
-  console.error("❌ Database connection failed:", err);
+  console.error("Database connection failed:", err);
   process.exit(1);
 }
 

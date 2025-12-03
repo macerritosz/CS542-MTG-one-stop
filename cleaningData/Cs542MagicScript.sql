@@ -6,11 +6,12 @@ DROP VIEW IF EXISTS vw_leaderboard_players_popular_builders;
 DROP VIEW IF EXISTS vw_leaderboard_players_decks_built;
 
 -- Drop Tables
+DROP TABLE IF EXISTS Transaction_Staging;
+DROP TABLE IF EXISTS Players_In_Transactions;
 DROP TABLE IF EXISTS Players_Build_Decks;
 DROP TABLE IF EXISTS Players_Save_Decks;
-DROP TABLE IF EXISTS Cards_In_Combos;
 DROP TABLE IF EXISTS Cards_In_Decks;
-DROP TABLE IF EXISTS Cards_In_Transactions;
+DROP TABLE IF EXISTS Cards_In_Transactions;;
 DROP TABLE IF EXISTS Produced_Mana;
 DROP TABLE IF EXISTS Color_Identity;
 DROP TABLE IF EXISTS Colors_To_Card;
@@ -18,7 +19,6 @@ DROP TABLE IF EXISTS Keywords_To_Card;
 DROP TABLE IF EXISTS Legalities;
 DROP TABLE IF EXISTS Keywords;
 DROP TABLE IF EXISTS Colors;
-DROP TABLE IF EXISTS Combo;
 DROP TABLE IF EXISTS Transaction;
 DROP TABLE IF EXISTS Deck;
 DROP TABLE IF EXISTS Card;
@@ -61,13 +61,8 @@ CREATE TABLE Deck (
 );
 
 CREATE TABLE Transaction (
-    transaction_time TIMESTAMP PRIMARY KEY DEFAULT CURRENT_TIMESTAMP,
-    total_price DECIMAL(10,2)
-);
-
-CREATE TABLE Combo (
-    comboID VARCHAR(36) PRIMARY KEY,
-    description VARCHAR(500)
+    transaction_time TIMESTAMP(6) PRIMARY KEY DEFAULT CURRENT_TIMESTAMP(6),
+    total_price DECIMAL(10,2) NOT NULL DEFAULT 0
 );
 
 CREATE TABLE Player (
@@ -154,16 +149,6 @@ CREATE TABLE Keywords_To_Card (
     FOREIGN KEY (keywordID) REFERENCES Keywords(keywordID) ON DELETE CASCADE
 );
 
-CREATE TABLE Cards_In_Transactions (
-   transaction_time TIMESTAMP,
-   cardID VARCHAR(36),
-   ct_quantity INT,
-   item_price DECIMAL(10,2),
-   PRIMARY KEY (transaction_time, cardID),
-   FOREIGN KEY (transaction_time) REFERENCES Transaction(transaction_time) ON DELETE CASCADE,
-   FOREIGN KEY (cardID) REFERENCES Card(cardID) ON DELETE CASCADE
-);
-
 CREATE TABLE Cards_In_Decks (
     deckID INT,
     cardID VARCHAR(36),
@@ -171,14 +156,6 @@ CREATE TABLE Cards_In_Decks (
     PRIMARY KEY (deckID, cardID),
     FOREIGN KEY (deckID) REFERENCES Deck(deckID) ON DELETE CASCADE,
     FOREIGN KEY (cardID) REFERENCES Card(cardID) ON DELETE CASCADE
-);
-
-CREATE TABLE Cards_In_Combos (
-    cardID VARCHAR(36),
-    comboID VARCHAR(36),
-    PRIMARY KEY (cardID, comboID),
-    FOREIGN KEY (cardID) REFERENCES Card(cardID) ON DELETE CASCADE,
-    FOREIGN KEY (comboID) REFERENCES Combo(comboID) ON DELETE CASCADE
 );
 
 CREATE TABLE Players_Build_Decks (
@@ -197,6 +174,43 @@ CREATE TABLE Players_Save_Decks (
     PRIMARY KEY (pid, deckID),
     FOREIGN KEY (pid) REFERENCES Player(pid) ON DELETE CASCADE,
     FOREIGN KEY (deckID) REFERENCES Deck(deckID) ON DELETE CASCADE
+);
+
+CREATE TABLE Cards_In_Transactions (
+    transaction_time TIMESTAMP(6),
+    cardID VARCHAR(36),
+    ct_quantity INT,
+    item_price DECIMAL(10,2),
+    is_foil tinyint(1) DEFAULT 0,
+    PRIMARY KEY (transaction_time, cardID),
+    FOREIGN KEY (transaction_time) REFERENCES Transaction(transaction_time) ON DELETE CASCADE,
+    FOREIGN KEY (cardID) REFERENCES Card(cardID) ON DELETE CASCADE
+);
+
+
+CREATE TABLE Players_In_Transactions (
+    transaction_time  TIMESTAMP(6) primary key,
+    buyerName       VARCHAR(100) NOT NULL,
+    sellerName      VARCHAR(100) NOT NULL,
+
+    FOREIGN KEY (transaction_time) REFERENCES Transaction(transaction_time)
+    ON DELETE CASCADE
+);
+
+CREATE INDEX idx_buyerName ON Players_In_Transactions(buyerName, transaction_time);
+CREATE INDEX idx_sellerName ON Players_In_Transactions(sellerName, transaction_time);
+
+CREATE TABLE Transaction_Staging (
+    staging_id        INT AUTO_INCREMENT PRIMARY KEY,
+    transaction_time TIMESTAMP(6)
+                                 NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+    cardID            VARCHAR(36) NOT NULL,
+    quantity          INT NOT NULL,
+    card_price        DECIMAL(10,2) NOT NULL,
+    is_foil           tinyint(1) DEFAULT 0,
+    total_price DECIMAL(10,2),
+    buyerName         VARCHAR(100) NOT NULL,
+    sellerName        VARCHAR(100) NOT NULL
 );
 
 -- ============================================================================
@@ -305,3 +319,39 @@ ORDER BY total_saves DESC, unique_savers DESC;
 -- Shows the most popular decks in each format
 -- View 11: Largest Decks (by card count)
 -- Shows decks ranked by total number of cards
+
+
+-- Transaction trigger
+DELIMITER $$
+
+CREATE TRIGGER create_related_transaction_tables
+    AFTER INSERT ON Transaction_Staging
+    FOR EACH ROW
+BEGIN
+    INSERT INTO Transaction (transaction_time, total_price)
+    VALUES (NEW.transaction_time, NEW.total_price);
+
+    -- Insert into Cards
+    INSERT INTO Cards_In_Transactions (
+        transaction_time, cardID, ct_quantity, item_price, is_foil
+    )
+    VALUES (
+               NEW.transaction_time,
+               NEW.cardID,
+               NEW.quantity,
+               NEW.card_price,
+               NEW.is_foil
+           );
+
+    -- Insert into Players
+    INSERT INTO Players_In_Transactions (
+        transaction_time, buyerName, sellerName
+    )
+    VALUES (
+               NEW.transaction_time,
+               NEW.buyerName,
+               NEW.sellerName
+           );
+END$$
+
+DELIMITER ;
