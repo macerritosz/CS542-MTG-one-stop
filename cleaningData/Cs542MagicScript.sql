@@ -121,7 +121,10 @@ CREATE TABLE Produced_Mana (
 );
 
 CREATE TABLE Legalities (
-   cardID VARCHAR(36),
+   cardID VARCHAR(36) PRIMARY KEY,
+   -- NOTE: This PRIMARY KEY constraint was already applied to the database
+   -- but was not saved in this script. This change reflects the edit that
+   -- was run and not included in the original script.
    standard BOOLEAN,
    future BOOLEAN,
    historic BOOLEAN,
